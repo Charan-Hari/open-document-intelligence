@@ -1,0 +1,20 @@
+DATA RETENTION POLICY
+
+Policy Owner: Information Governance Office
+Review Cycle: Annual
+
+1. Purpose. This policy defines how long operational records are retained
+before secure disposal.
+
+2. Scope. This policy applies to all business units handling customer or
+employee records.
+
+3. Retention Schedule. Financial records are retained for seven years.
+Personnel records are retained for the duration of employment plus three
+years. Support tickets are retained for two years.
+
+4. Review. This policy is reviewed by the Policy Owner on the schedule
+above, or sooner if regulatory requirements change.
+
+5. Exceptions. Any exception to this policy must be approved in writing by
+the Information Governance Office prior to implementation.

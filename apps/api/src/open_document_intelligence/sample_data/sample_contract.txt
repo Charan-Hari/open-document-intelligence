@@ -1,0 +1,25 @@
+MASTER SERVICES AGREEMENT
+
+This Master Services Agreement (the "Agreement") is made between Northwind
+Traders LLC and Blue Harbor Consulting Inc. for the provision of advisory
+services described in Exhibit A.
+
+Effective Date: 2024-01-15
+
+1. Term. This Agreement begins on the Effective Date and continues until
+terminated by either party.
+
+2. Termination. Either party may terminate this Agreement for convenience
+upon 30 days written notice to the other party.
+
+3. Governing Law. This Agreement is governed by the laws of the State of
+Washington.
+
+4. Confidentiality. Each party agrees to protect the other's confidential
+information using at least the same degree of care it uses for its own
+information of similar importance.
+
+5. Fees. Blue Harbor Consulting Inc. will invoice Northwind Traders LLC
+monthly for services rendered under Exhibit A at the agreed rates.
+
+Signed on behalf of both parties as of the Effective Date above.

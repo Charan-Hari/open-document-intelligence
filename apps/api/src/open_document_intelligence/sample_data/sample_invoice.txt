@@ -1,0 +1,20 @@
+INVOICE
+
+Invoice Number: INV-20458
+Invoice Date: 2024-03-01
+Due Date: 2024-03-31
+
+Bill To: Riverside Community Clinic
+From: Cascade Medical Supply Co.
+
+Description                         Qty     Unit Price     Amount
+Nitrile exam gloves (box of 100)     40        $6.50        $260.00
+Digital thermometers                 15       $18.00        $270.00
+Surgical masks (box of 50)           25        $9.20        $230.00
+
+Subtotal: $760.00
+Tax: $60.80
+Total Due: $820.80
+
+Payment terms: Net 30. Please remit payment to the address on file and
+reference the invoice number above.
