@@ -7,173 +7,180 @@
     <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
-    <main class="shell">
-      <header class="topbar">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="nav-toggle" class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
         <div>
           <p class="eyebrow">LOCAL-FIRST DOCUMENT WORKBENCH</p>
           <h1>Open Document Intelligence</h1>
         </div>
-        <div class="topbar-actions">
-          <span class="privacy-badge">Private by default</span>
-          <span id="api-status" class="api-status">Checking API…</span>
-        </div>
-      </header>
+      </div>
+    </header>
 
-      <section class="hero">
-        <div>
-          <p class="eyebrow">Evidence before conclusions</p>
-          <h2>Turn complex documents into reviewable decisions.</h2>
-          <p class="hero-copy">
-            Upload contracts, policies, invoices, and forms. Follow every processing phase,
-            inspect the evidence, and approve or correct uncertain results. Everything runs
-            locally — no document ever leaves this machine.
-          </p>
-        </div>
-        <div class="hero-metric">
-          <span class="metric-label">Documents processed</span>
-          <strong id="doc-count">0</strong>
-          <span>in this local workspace</span>
-        </div>
-      </section>
+    <nav id="nav-drawer" class="nav-drawer">
+      <a href="#upload" class="nav-link" data-view="upload">Upload</a>
+      <a href="#result" class="nav-link" data-view="result">Result</a>
+      <a href="#documents" class="nav-link" data-view="documents">Documents</a>
+      <a href="#evaluation" class="nav-link" data-view="evaluation">Evaluation</a>
+    </nav>
+    <div id="nav-backdrop" class="nav-backdrop" hidden></div>
 
-      <section class="workspace intake">
-        <div class="intake-grid">
-          <div class="panel">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Step 1</p>
-                <h3>Upload a document</h3>
+    <main class="shell">
+      <section id="view-upload" class="view">
+        <section class="hero">
+          <p class="hero-copy">Upload a document — every extracted field, citation, and confidence score is checked before it's trusted.</p>
+          <div class="hero-metric">
+            <strong id="doc-count">0</strong>
+            <span>processed</span>
+          </div>
+        </section>
+
+        <section class="workspace intake">
+          <div class="intake-grid">
+            <div class="panel">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Step 1</p>
+                  <h3>Upload a document</h3>
+                </div>
               </div>
-            </div>
-            <form id="upload-form">
-              <label class="field-label" for="document-type">Document type</label>
-              <select id="document-type" name="document_type">
-                <option value="generic">Generic</option>
-                <option value="contract">Contract</option>
-                <option value="invoice">Invoice</option>
-                <option value="policy">Policy</option>
-                <option value="form">Form</option>
-              </select>
+              <form id="upload-form">
+                <label class="field-label" for="document-type">Document type</label>
+                <select id="document-type" name="document_type">
+                  <option value="generic">Generic</option>
+                  <option value="contract">Contract</option>
+                  <option value="invoice">Invoice</option>
+                  <option value="policy">Policy</option>
+                  <option value="form">Form</option>
+                </select>
 
-              <label class="dropzone" for="file-input" id="dropzone">
-                <input id="file-input" name="file" type="file" accept=".txt,.md,.csv,.pdf" hidden />
-                <span class="dropzone-title">Drop a .txt, .md, .csv, or .pdf file here</span>
-                <span class="dropzone-sub">or click to browse (max 10 MB)</span>
-              </label>
-              <div id="selected-file" class="selected-file" hidden></div>
-              <button class="primary-button" type="submit" id="upload-button">
-                Upload &amp; process
-              </button>
-            </form>
-            <p id="upload-error" class="form-error" hidden></p>
-          </div>
-
-          <div class="panel">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Step 2</p>
-                <h3>Or try a sample document</h3>
-              </div>
-            </div>
-            <div id="sample-list" class="sample-list">
-              <p class="muted">Loading sample catalog…</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="workspace">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Processing pipeline</p>
-            <h3>What happens to every document</h3>
-          </div>
-          <span id="status" class="status">Awaiting document</span>
-        </div>
-        <div id="pipeline" class="pipeline"></div>
-      </section>
-
-      <section class="workspace">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Quality</p>
-            <h3>Local evaluation harness</h3>
-          </div>
-          <button id="run-evaluation" class="ghost-button" type="button">Run evaluation</button>
-        </div>
-        <p class="muted">
-          Re-runs deterministic extraction and retrieval against a small hand-labeled
-          golden set of the bundled samples, entirely locally.
-        </p>
-        <div id="evaluation-result" class="evaluation-result" hidden></div>
-        <p id="evaluation-error" class="form-error" hidden></p>
-      </section>
-
-      <section class="workspace documents">
-        <div class="documents-grid">
-          <div class="panel doc-list-panel">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Workspace</p>
-                <h3>Documents</h3>
-              </div>
-              <button id="refresh-documents" class="ghost-button" type="button">Refresh</button>
-            </div>
-            <ul id="document-list" class="document-list">
-              <li class="muted">No documents yet. Upload one or run a sample above.</li>
-            </ul>
-          </div>
-
-          <div class="panel doc-detail-panel">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Detail</p>
-                <h3 id="detail-title">Select a document</h3>
-              </div>
-              <span id="detail-confidence" class="confidence-pill" hidden></span>
-            </div>
-
-            <div id="detail-empty" class="muted">
-              Choose a document from the list, upload a file, or run a sample to see
-              extracted fields, citations, and review actions here.
-            </div>
-
-            <div id="detail-content" hidden>
-              <p id="detail-meta" class="detail-meta"></p>
-              <p id="ocr-status" class="ocr-status" hidden></p>
-              <p id="detail-error" class="form-error" hidden></p>
-
-              <h4>Extracted fields</h4>
-              <div id="field-list" class="field-list"></div>
-
-              <h4>Evidence &amp; citations</h4>
-              <ul id="evidence-list" class="evidence-list"></ul>
-
-              <h4>Source preview</h4>
-              <pre id="text-preview" class="text-preview"></pre>
-
-              <h4>Audit trail</h4>
-              <ul id="audit-list" class="audit-list"></ul>
-
-              <h4>Ask this document</h4>
-              <form id="question-form" class="question-form">
-                <input id="question-input" type="text" maxlength="1000"
-                  placeholder="e.g. Who owns this policy?" />
-                <button class="secondary-button" type="submit">Find evidence</button>
+                <label class="dropzone" for="file-input" id="dropzone">
+                  <input id="file-input" name="file" type="file" accept=".txt,.md,.csv,.pdf" hidden />
+                  <span class="dropzone-title">Drop a .txt, .md, .csv, or .pdf file here</span>
+                  <span class="dropzone-sub">or click to browse (max 10 MB)</span>
+                </label>
+                <div id="selected-file" class="selected-file" hidden></div>
+                <button class="primary-button" type="submit" id="upload-button">
+                  Upload &amp; process
+                </button>
               </form>
-              <p id="question-error" class="form-error" hidden></p>
-              <div id="question-answer" class="question-answer" hidden></div>
+              <p id="upload-error" class="form-error" hidden></p>
+            </div>
+
+            <div class="panel">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Step 2</p>
+                  <h3>Or try a sample document</h3>
+                </div>
+              </div>
+              <div id="sample-list" class="sample-list">
+                <p class="muted">Loading sample catalog…</p>
+              </div>
             </div>
           </div>
-        </div>
+        </section>
       </section>
 
-      <section class="cards">
-        <article><span>01</span><h3>Multiple modes</h3><p>Switch between contract, policy, invoice, and form schemas.</p></article>
-        <article><span>02</span><h3>Source evidence</h3><p>Every answer can point back to a page and line in the document.</p></article>
-        <article><span>03</span><h3>Human control</h3><p>Low-confidence extraction becomes a review task, never a silent guess.</p></article>
+      <section id="view-result" class="view">
+        <section id="result-banner" class="workspace result-banner" hidden>
+          <div id="result-banner-content"></div>
+        </section>
+
+        <section class="workspace">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Processing pipeline</p>
+              <h3>What happens to every document</h3>
+            </div>
+            <span id="status" class="status">Awaiting document</span>
+          </div>
+          <div id="pipeline" class="pipeline"></div>
+        </section>
+
+        <section class="workspace">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Detail</p>
+              <h3 id="detail-title">Select a document</h3>
+            </div>
+            <span id="detail-confidence" class="confidence-pill" hidden></span>
+          </div>
+
+          <div id="detail-empty" class="muted">
+            Choose a document from the list, upload a file, or run a sample to see
+            extracted fields, citations, and review actions here.
+          </div>
+
+          <div id="detail-content" hidden>
+            <p id="detail-meta" class="detail-meta"></p>
+            <p id="ocr-status" class="ocr-status" hidden></p>
+            <p id="detail-error" class="form-error" hidden></p>
+
+            <h4>Extracted fields</h4>
+            <div id="field-list" class="field-list"></div>
+
+            <h4>Evidence &amp; citations</h4>
+            <ul id="evidence-list" class="evidence-list"></ul>
+
+            <h4>Source preview</h4>
+            <pre id="text-preview" class="text-preview"></pre>
+
+            <h4>Audit trail</h4>
+            <ul id="audit-list" class="audit-list"></ul>
+
+            <h4>Ask this document</h4>
+            <form id="question-form" class="question-form">
+              <input id="question-input" type="text" maxlength="1000"
+                placeholder="e.g. Who owns this policy?" />
+              <button class="secondary-button" type="submit">Find evidence</button>
+            </form>
+            <p id="question-error" class="form-error" hidden></p>
+            <div id="question-answer" class="question-answer" hidden></div>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-documents" class="view">
+        <section class="workspace documents">
+          <div class="documents-grid single-column">
+            <div class="panel doc-list-panel">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Workspace</p>
+                  <h3>Documents</h3>
+                </div>
+                <button id="refresh-documents" class="ghost-button" type="button">Refresh</button>
+              </div>
+              <ul id="document-list" class="document-list">
+                <li class="muted">No documents yet. Upload one or run a sample above.</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-evaluation" class="view">
+        <section class="workspace">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Quality</p>
+              <h3>Local evaluation harness</h3>
+            </div>
+            <button id="run-evaluation" class="ghost-button" type="button">Run evaluation</button>
+          </div>
+          <p class="muted">
+            Re-runs deterministic extraction and retrieval against a small hand-labeled
+            golden set of the bundled samples, entirely locally.
+          </p>
+          <div id="evaluation-result" class="evaluation-result" hidden></div>
+          <p id="evaluation-error" class="form-error" hidden></p>
+        </section>
       </section>
     </main>
     <script src="./src/app.js"></script>
   </body>
 </html>
+

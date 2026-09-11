@@ -26,7 +26,6 @@ const state = {
 };
 
 const els = {
-  apiStatus: document.querySelector('#api-status'),
   docCount: document.querySelector('#doc-count'),
   pipeline: document.querySelector('#pipeline'),
   status: document.querySelector('#status'),
@@ -58,7 +57,64 @@ const els = {
   runEvaluation: document.querySelector('#run-evaluation'),
   evaluationResult: document.querySelector('#evaluation-result'),
   evaluationError: document.querySelector('#evaluation-error'),
+  navToggle: document.querySelector('#nav-toggle'),
+  navDrawer: document.querySelector('#nav-drawer'),
+  navBackdrop: document.querySelector('#nav-backdrop'),
+  navLinks: document.querySelectorAll('.nav-link'),
+  resultBanner: document.querySelector('#result-banner'),
+  resultBannerContent: document.querySelector('#result-banner-content'),
 };
+
+const VIEWS = ['upload', 'result', 'documents', 'evaluation'];
+
+function setActiveView(view) {
+  if (!VIEWS.includes(view)) view = 'upload';
+  VIEWS.forEach((name) => {
+    const section = document.querySelector(`#view-${name}`);
+    if (section) section.classList.toggle('active', name === view);
+  });
+  els.navLinks.forEach((link) => {
+    link.classList.toggle('active', link.dataset.view === view);
+  });
+  closeNav();
+}
+
+function navigateTo(view) {
+  window.location.hash = `#${view}`;
+}
+
+function closeNav() {
+  els.navDrawer.classList.remove('open');
+  els.navBackdrop.hidden = true;
+  els.navToggle.setAttribute('aria-expanded', 'false');
+}
+
+function toggleNav() {
+  const isOpen = els.navDrawer.classList.toggle('open');
+  els.navBackdrop.hidden = !isOpen;
+  els.navToggle.setAttribute('aria-expanded', String(isOpen));
+}
+
+function renderResultBanner(document_) {
+  if (!document_) {
+    els.resultBanner.hidden = true;
+    return;
+  }
+  const needsReview = document_.status === 'needs_review';
+  const failed = document_.status === 'failed';
+  const pillClass = failed ? 'failed' : needsReview ? 'needs-review' : 'ready';
+  const label = failed ? 'Failed' : needsReview ? 'Needs review' : 'Ready';
+  const message = failed
+    ? 'Processing failed for this document — see the pipeline below for details.'
+    : needsReview
+      ? 'Some fields need human review before this document can be trusted downstream.'
+      : 'All extracted fields met the confidence threshold — no review required.';
+  els.resultBannerContent.innerHTML = `
+    <span class="result-status-pill ${pillClass}">${label}</span>
+    <p class="result-message">${escapeHtml(message)}</p>
+  `;
+  els.resultBanner.hidden = false;
+}
 
 function escapeHtml(value) {
   const div = document.createElement('div');
@@ -117,12 +173,8 @@ async function apiFetch(path, options) {
 async function checkHealth() {
   try {
     await apiFetch('/health');
-    els.apiStatus.textContent = 'API connected';
-    els.apiStatus.classList.add('online');
     return true;
   } catch {
-    els.apiStatus.textContent = 'API unavailable — start the local server';
-    els.apiStatus.classList.remove('online');
     return false;
   }
 }
@@ -291,6 +343,7 @@ function renderDetail(document) {
   els.detailContent.hidden = false;
   els.detailTitle.textContent = document.filename;
   els.status.textContent = `${statusLabel(document.status)} · ${document.filename}`;
+  renderResultBanner(document);
 
   if (document.confidence !== null && document.confidence !== undefined) {
     els.detailConfidence.hidden = false;
@@ -354,6 +407,7 @@ async function selectDocument(id) {
   try {
     const document_ = await apiFetch(`/v1/documents/${id}`);
     renderDetail(document_);
+    navigateTo('result');
     await loadDocuments();
   } catch (error) {
     els.detailError.hidden = false;
@@ -368,6 +422,7 @@ async function runSample(sampleId, button) {
     const document_ = await apiFetch(`/v1/samples/${sampleId}/ingest`, { method: 'POST' });
     await loadDocuments();
     renderDetail(document_);
+    navigateTo('result');
   } catch (error) {
     els.uploadError.hidden = false;
     els.uploadError.textContent = error.message;
@@ -398,6 +453,7 @@ async function submitUpload(event) {
     renderDetail(document_);
     els.uploadForm.reset();
     els.selectedFile.hidden = true;
+    navigateTo('result');
   } catch (error) {
     els.uploadError.hidden = false;
     els.uploadError.textContent = error.message;
@@ -430,6 +486,12 @@ async function submitReview(fieldKey, decision, correctedValue) {
 function wireEvents() {
   els.uploadForm.addEventListener('submit', submitUpload);
   els.questionForm.addEventListener('submit', askQuestion);
+
+  els.navToggle.addEventListener('click', toggleNav);
+  els.navBackdrop.addEventListener('click', closeNav);
+  window.addEventListener('hashchange', () => {
+    setActiveView(window.location.hash.replace('#', ''));
+  });
 
   els.fileInput.addEventListener('change', () => {
     const file = els.fileInput.files[0];
@@ -532,6 +594,7 @@ async function runEvaluation() {
 async function init() {
   renderStages(null);
   wireEvents();
+  setActiveView(window.location.hash.replace('#', '') || 'upload');
   await checkHealth();
   await Promise.all([loadSamples(), loadDocuments()]);
 }
