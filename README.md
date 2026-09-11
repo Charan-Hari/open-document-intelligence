@@ -1,13 +1,27 @@
 # Open Document Intelligence
 
-A local-first document intelligence workbench for inspecting contracts, policies,
-invoices, forms, and operational documents with evidence-backed results.
+**Live demo:** https://open-document-intelligence.onrender.com _(free tier — the
+service sleeps after 15 min idle, so the first request can take ~30-60s to wake up)_
 
-> **Live demo:** https://open-document-intelligence.onrender.com — no signup, no card, no data leaves the container. (Free tier: the service sleeps after 15 min of inactivity; first load may take ~30-60s to wake up.)
+## The problem
 
-## Product direction
+Teams that review contracts, policies, invoices, and forms spend a lot of time
+manually searching long documents, re-typing values into other systems, and
+double-checking whether a generated answer is actually backed by the source
+text. Most "AI document" demos hide this uncertainty: they return an answer or
+an extracted field with no way to tell whether it's trustworthy, and no path
+for a human to catch a mistake before it becomes a decision.
 
-The platform makes every processing phase visible:
+Open Document Intelligence is a small, self-hosted workbench that treats that
+uncertainty as a first-class concern instead of a demo footnote: every
+extracted field carries a confidence score and a citation back to the exact
+page/line it came from, every generated answer is grounded in retrieved
+evidence, and anything below a confidence threshold is routed to a human
+review queue instead of being silently accepted.
+
+## How it works
+
+Every document goes through the same six visible stages:
 
 1. Upload and validate
 2. Parse text and layout
@@ -15,10 +29,11 @@ The platform makes every processing phase visible:
 4. Retrieve supporting evidence
 5. Validate and score confidence
 6. Route uncertain results for human review
-7. Preserve an auditable history
 
-The first implementation is intentionally provider-neutral. Local parsing, OCR,
-embeddings, and language models can be added without changing the API contract.
+...with an audit trail preserved throughout. The implementation is
+provider-neutral by design: local parsing, OCR, embeddings, and language
+models can all be swapped or added without changing the API contract, and the
+whole thing runs with no paid APIs or third-party keys.
 
 ## See it in action
 
@@ -193,33 +208,31 @@ Then open `http://localhost:8080` with the API running.
 ## Deploying a free live demo
 
 A `Dockerfile` at the repo root builds a single container that serves both the
-API and the static web UI on one port (`7860`), so anyone can try the app
-without a local checkout — no card, no signup, no paid API keys.
+API and the static web UI on one port, so anyone can try the app without a
+local checkout — no card, no paid API keys. The live demo above runs on
+Render's free tier this way.
 
-**Hugging Face Spaces (recommended, free, no card required):**
+**Render (used for the live demo above):**
 
-1. Create a new Space at <https://huggingface.co/new-space>, choose the
-   **Docker** SDK, and set visibility to public.
-2. Push this repository to the Space's git remote (Spaces are just git repos):
-   ```powershell
-   git remote add space https://huggingface.co/spaces/<your-username>/open-document-intelligence
-   git push space main
-   ```
-3. The Space builds the `Dockerfile` and starts the container automatically.
-   Once it's live, the URL is `https://huggingface.co/spaces/<your-username>/open-document-intelligence`.
-4. Add that URL to the "Live demo" line near the top of this README.
+1. Create a free account at <https://render.com> and connect your GitHub repo.
+2. New → Web Service → select this repo. Render detects the `Dockerfile`
+   automatically; choose the **Free** instance type.
+3. No environment variables are required — the Dockerfile sets sane defaults
+   and reads Render's `PORT` automatically.
+4. Deploy. Render builds the image and gives you a `*.onrender.com` URL.
 
 Notes on the free tier:
 
-- Free Spaces use CPU-only hardware and ephemeral storage — uploaded
-  documents and the vector index reset whenever the Space restarts or sleeps.
+- Free instances have ephemeral storage and spin down after 15 minutes of
+  inactivity — uploaded documents and the vector index reset on restart, and
+  the first request after idling can take 30-60s to wake the container up.
   That's expected for a public demo; nothing sensitive should be uploaded to it.
 - The image installs only the API's core dependencies (no `ml`/`ocr` extras)
   to keep the build small and fast on free hardware. Embeddings fall back to
   the deterministic hashing backend and OCR is reported as unavailable, both
   of which degrade gracefully by design (see the table above).
-- Any other Docker-capable free host (Render, Fly.io, etc.) works the same
-  way: build the root `Dockerfile` and expose port `7860`.
+- Any other Docker-capable host (Hugging Face Spaces, Fly.io, etc.) works the
+  same way: build the root `Dockerfile` and expose the port it listens on.
 
 ## Principles
 
@@ -231,18 +244,3 @@ Notes on the free tier:
 - Public or synthetic documents for demos
 - Be honest about what is synchronous vs. asynchronous — no fake job queues
 
-## Status
-
-End-to-end local pipeline implemented: upload/validate, parse (text/PDF, with
-optional local OCR for scanned/image-only PDFs and explicit
-text-extracted-vs-OCR-needed metadata), deterministic extraction, evidence
-citations, chunk indexing into a local vector store, vector-similarity
-retrieval with lexical fallback, a RAG endpoint that separates evidence from
-generation (optional local Ollama, safe extractive fallback), an explicit
-synchronous workflow/job record, a human review loop, a persisted audit
-trail, a local evaluation harness for extraction/retrieval regressions, a
-sample dataset catalog with license/source metadata, and a full web UI, all
-covered by CI (including a real local-OCR success path and a frontend
-syntax check).
-Future milestones: true background/async processing for large files, and
-richer evaluation datasets covering more document types.
