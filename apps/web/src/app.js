@@ -48,6 +48,7 @@ const els = {
   ocrStatus: document.querySelector('#ocr-status'),
   fieldList: document.querySelector('#field-list'),
   evidenceList: document.querySelector('#evidence-list'),
+  chunkList: document.querySelector('#chunk-list'),
   textPreview: document.querySelector('#text-preview'),
   auditList: document.querySelector('#audit-list'),
   questionForm: document.querySelector('#question-form'),
@@ -274,6 +275,23 @@ function renderEvidence(document) {
     .join('');
 }
 
+function renderChunks(document) {
+  if (!document.chunks || !document.chunks.length) {
+    els.chunkList.innerHTML = '<li class="muted">No chunks indexed yet.</li>';
+    return;
+  }
+  els.chunkList.innerHTML = document.chunks
+    .map(
+      (chunk) => `
+      <li>
+        <span class="chunk-id">${escapeHtml(chunk.id)}</span>
+        <span class="evidence-loc">p.${chunk.page} · lines ${chunk.line_start}-${chunk.line_end}</span>
+        <span class="evidence-snippet">${escapeHtml(chunk.text.slice(0, 160))}${chunk.text.length > 160 ? '…' : ''}</span>
+      </li>`
+    )
+    .join('');
+}
+
 const OCR_STATUS_LABELS = {
   not_needed: null,
   used: 'OCR recovered text from scanned page(s)',
@@ -350,6 +368,7 @@ function renderDetail(document) {
   renderOcrStatus(document);
   renderFields(document);
   renderEvidence(document);
+  renderChunks(document);
   els.textPreview.textContent = document.text_preview || '(no preview available)';
   renderStages(document.stages);
   els.questionAnswer.hidden = true;
