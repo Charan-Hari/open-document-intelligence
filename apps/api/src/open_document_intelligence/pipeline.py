@@ -167,7 +167,7 @@ def process_document(
     stages.append(
         PipelineStage(
             stage=ProcessingStage.extraction,
-            label="Extract fields",
+            label="Extract structured fields",
             status=StageStatus.needs_review if flagged else StageStatus.complete,
             detail=extraction_detail,
         )
@@ -176,7 +176,7 @@ def process_document(
     stages.append(
         PipelineStage(
             stage=ProcessingStage.evidence,
-            label="Find evidence",
+            label="Ground evidence & citations",
             status=StageStatus.complete if evidence else StageStatus.needs_review,
             detail=(
                 f"Linked {len(evidence)} citation(s) back to source pages and lines."
@@ -202,7 +202,7 @@ def process_document(
     stages.append(
         PipelineStage(
             stage=ProcessingStage.indexing,
-            label="Index for retrieval",
+            label="Embed & index in vector DB",
             status=indexing_status,
             detail=indexing_detail,
         )

@@ -12,9 +12,9 @@ const API_BASE =
 const STAGE_LABELS = {
   upload: 'Upload & validate',
   parsing: 'Parse document',
-  extraction: 'Extract fields',
-  evidence: 'Find evidence',
-  indexing: 'Index for retrieval',
+  extraction: 'Extract structured fields',
+  evidence: 'Ground evidence & citations',
+  indexing: 'Embed & index in vector DB',
   review: 'Human review',
 };
 
@@ -371,20 +371,35 @@ async function askQuestion(event) {
     });
     const evidence = result.evidence.length
       ? `<ul class="answer-citations">${result.evidence.map((item) => `
-          <li><span>p.${item.page} · lines ${item.line_start}-${item.line_end} · ${escapeHtml(item.method)} match</span>
+          <li><span class="rag-method-tag rag-method-${escapeHtml(item.method)}">${escapeHtml(methodLabel(item.method))}</span>
+            <span>p.${item.page} · lines ${item.line_start}-${item.line_end}</span>
             ${escapeHtml(item.text)}</li>`).join('')}</ul>`
       : '<p class="muted">No supporting evidence was found.</p>';
+    const generationTag = `<span class="rag-method-tag rag-method-${escapeHtml(result.generation_method)}">${escapeHtml(generationLabel(result.generation_method))}</span>`;
     els.questionAnswer.innerHTML = `
       <div class="answer-header">
         <strong>${result.grounded ? 'Grounded answer' : 'Insufficient evidence'}</strong>
-        <span>${Math.round(result.confidence * 100)}% match confidence · generated via ${escapeHtml(result.generation_method)}</span>
+        <span>${Math.round(result.confidence * 100)}% match confidence</span>
       </div>
+      <div class="rag-stack-line">Retrieval + generation stack: ${generationTag}</div>
       <p>${escapeHtml(result.answer)}</p>${evidence}`;
   } catch (error) {
     els.questionAnswer.hidden = true;
     els.questionError.hidden = false;
     els.questionError.textContent = error.message;
   }
+}
+
+function methodLabel(method) {
+  return { vector: 'Vector search', lexical: 'Keyword search', none: 'No match' }[method] || method;
+}
+
+function generationLabel(method) {
+  return {
+    ollama: 'Ollama LLM (local)',
+    extractive: 'Extractive (no LLM, quotes only)',
+    none: 'No generation',
+  }[method] || method;
 }
 
 async function selectDocument(id) {
