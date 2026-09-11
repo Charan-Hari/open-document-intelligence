@@ -62,7 +62,7 @@ const els = {
   resultBannerContent: document.querySelector('#result-banner-content'),
 };
 
-const VIEWS = ['upload', 'workspace', 'evaluation'];
+const VIEWS = ['upload', 'workspace'];
 
 function setActiveView(view) {
   if (!VIEWS.includes(view)) view = 'upload';

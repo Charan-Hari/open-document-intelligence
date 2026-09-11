@@ -192,6 +192,24 @@ select, input[type="text"] { background: var(--surface-solid); border: 1px solid
 
 .text-preview { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; color: var(--text-muted); font-size: 12.5px; max-height: 220px; overflow-y: auto; padding: 14px; white-space: pre-wrap; }
 
+.detail-more { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 12px; }
+.detail-more summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--text-muted); list-style: none; display: flex; align-items: center; gap: 6px; }
+.detail-more summary::-webkit-details-marker { display: none; }
+.detail-more summary::before { content: '▸'; color: var(--accent); font-size: 11px; transition: transform .12s ease; }
+.detail-more[open] summary::before { transform: rotate(90deg); }
+.detail-more summary:hover { color: var(--text); }
+.detail-more[open] summary { margin-bottom: 12px; }
+
+.quality-check { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; margin-top: 20px; padding: 18px 22px; }
+.quality-check summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 12px; }
+.quality-check summary::-webkit-details-marker { display: none; }
+.quality-check summary::after { content: '▸'; color: var(--accent); font-size: 12px; margin-left: auto; transition: transform .12s ease; }
+.quality-check[open] summary::after { transform: rotate(90deg); }
+.quality-check summary .eyebrow { margin: 0; }
+.quality-check summary strong { font-size: 14px; }
+.quality-check summary .muted { font-size: 12.5px; flex-basis: 100%; }
+.quality-check-body { margin-top: 14px; }
+
 .ocr-status { border-radius: 8px; font-size: 12.5px; margin: 0 0 14px; padding: 10px 14px; }
 .ocr-status.ocr-used { background: var(--accent-soft-bg); color: var(--accent-strong); border: 1px solid var(--accent-soft-border); }
 .ocr-status.ocr-unavailable { background: var(--warn-bg); color: var(--warn-text); border: 1px solid var(--warn-border); }

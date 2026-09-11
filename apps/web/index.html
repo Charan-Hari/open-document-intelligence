@@ -19,7 +19,6 @@
     <nav id="nav-drawer" class="nav-tabs">
       <a href="#upload" class="nav-link" data-view="upload"><span class="nav-step">1</span>Upload</a>
       <a href="#workspace" class="nav-link" data-view="workspace"><span class="nav-step">2</span>Workspace</a>
-      <a href="#evaluation" class="nav-link" data-view="evaluation"><span class="nav-step">3</span>Evaluation</a>
     </nav>
 
     <main class="shell">
@@ -132,15 +131,6 @@
                 <h4>Extracted fields</h4>
                 <div id="field-list" class="field-list"></div>
 
-                <h4>Evidence &amp; citations</h4>
-                <ul id="evidence-list" class="evidence-list"></ul>
-
-                <h4>Source preview</h4>
-                <pre id="text-preview" class="text-preview"></pre>
-
-                <h4>Audit trail</h4>
-                <ul id="audit-list" class="audit-list"></ul>
-
                 <h4>Ask this document</h4>
                 <form id="question-form" class="question-form">
                   <input id="question-input" type="text" maxlength="1000"
@@ -149,28 +139,38 @@
                 </form>
                 <p id="question-error" class="form-error" hidden></p>
                 <div id="question-answer" class="question-answer" hidden></div>
+
+                <details class="detail-more">
+                  <summary>Evidence &amp; citations</summary>
+                  <ul id="evidence-list" class="evidence-list"></ul>
+                </details>
+
+                <details class="detail-more">
+                  <summary>Source preview</summary>
+                  <pre id="text-preview" class="text-preview"></pre>
+                </details>
+
+                <details class="detail-more">
+                  <summary>Audit trail</summary>
+                  <ul id="audit-list" class="audit-list"></ul>
+                </details>
               </div>
             </section>
           </div>
         </div>
-      </section>
 
-      <section id="view-evaluation" class="view">
-        <section class="workspace">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Quality</p>
-              <h3>Local evaluation harness</h3>
-            </div>
+        <details id="quality-check" class="quality-check">
+          <summary>
+            <span class="eyebrow">Quality</span>
+            <strong>Quality check &amp; evaluation harness</strong>
+            <span class="muted">Re-runs deterministic extraction/retrieval against a hand-labeled sample set — not part of your document flow</span>
+          </summary>
+          <div class="quality-check-body">
             <button id="run-evaluation" class="ghost-button" type="button">Run evaluation</button>
+            <div id="evaluation-result" class="evaluation-result" hidden></div>
+            <p id="evaluation-error" class="form-error" hidden></p>
           </div>
-          <p class="muted">
-            Re-runs deterministic extraction and retrieval against a small hand-labeled
-            golden set of the bundled samples, entirely locally.
-          </p>
-          <div id="evaluation-result" class="evaluation-result" hidden></div>
-          <p id="evaluation-error" class="form-error" hidden></p>
-        </section>
+        </details>
       </section>
     </main>
     <script src="./src/app.js"></script>
