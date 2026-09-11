@@ -18,6 +18,17 @@ The platform makes every processing phase visible:
 The first implementation is intentionally provider-neutral. Local parsing, OCR,
 embeddings, and language models can be added without changing the API contract.
 
+## See it in action
+
+The web workspace walks every document through the same six-stage pipeline and
+keeps humans in the loop for anything the system isn't confident about.
+
+| | |
+|---|---|
+| ![Hero section](docs/screenshots/01-hero.png) **Private by default.** No document ever leaves your machine — everything runs against a local API with no third-party keys or paid services required. | ![Processing pipeline](docs/screenshots/02-pipeline.png) **Every phase is visible.** Upload, parsing, field extraction, evidence linking, indexing, and review are reported as discrete, inspectable steps — not a black box. |
+| ![Extraction review](docs/screenshots/03-extraction-review.png) **Confidence-scored extraction.** Each field shows its confidence, its citation back to the source text, and one-click Approve/Correct actions for human review. | ![Grounded RAG answer](docs/screenshots/04-grounded-rag-answer.png) **Grounded answers with citations.** Ask a question about the document and get an answer backed by page/line citations and a source preview — no unverifiable claims. |
+| ![Evaluation harness](docs/screenshots/05-evaluation.png) **Built-in evaluation.** A local, deterministic evaluation harness scores extraction accuracy and retrieval hit rate against a hand-labeled golden set, entirely offline. | |
+
 ## What's implemented
 
 - **Real multipart upload** (`POST /v1/documents`) with extension/size/empty-file
