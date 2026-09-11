@@ -82,7 +82,8 @@ h4 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: v
 .tiny-button { background: var(--surface-solid); border: 1px solid var(--border-strong); border-radius: 6px; color: var(--text); cursor: pointer; font-size: 12px; padding: 6px 10px; margin-right: 6px; }
 .tiny-button.approve { border-color: var(--accent-soft-border); color: var(--accent-strong); }
 .tiny-button.correct { border-color: var(--warn-border); color: var(--warn-text); }
-.hero-metric { align-items: baseline; color: var(--brand-dark); display: flex; gap: 6px; white-space: nowrap; background: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; padding: 10px 18px; }
+.hero-metric { align-items: baseline; color: var(--brand-dark); cursor: pointer; display: flex; gap: 6px; white-space: nowrap; background: #fff; border: 1px solid rgba(255,255,255,.5); border-radius: 999px; padding: 10px 18px; text-decoration: none; transition: transform .12s ease, box-shadow .12s ease; }
+.hero-metric:hover { box-shadow: 0 4px 14px rgba(0,0,0,.18); transform: translateY(-1px); }
 .hero-metric strong { color: var(--accent-strong); font-size: 22px; letter-spacing: -.02em; }
 .metric-label { color: var(--text-muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
 .workspace { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 28px; margin-bottom: 24px; box-shadow: 0 4px 14px rgba(16, 24, 40, .05); }
