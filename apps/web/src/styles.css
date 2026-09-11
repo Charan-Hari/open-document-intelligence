@@ -2,11 +2,11 @@
   color-scheme: light;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 
-  --bg: #f6f8fb;
-  --bg-accent: radial-gradient(circle at 80% 0%, #e7f0fb 0, transparent 40%);
+  --bg: #eef3f6;
+  --bg-accent: radial-gradient(circle at 85% -5%, #cdeadd 0, transparent 45%), radial-gradient(circle at 8% 15%, #dbeaf9 0, transparent 40%), radial-gradient(circle at 50% 100%, #fbe9d2 0, transparent 35%);
   --surface: #ffffffcc;
   --surface-solid: #ffffff;
-  --panel: #f9fbfd;
+  --panel: #f1f6f4;
   --border: #dbe4ee;
   --border-strong: #c2d0de;
   --text: #16202c;
@@ -93,6 +93,12 @@ h4 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: v
 .pipeline { display: grid; gap: 10px; }
 .stage { align-items: center; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; display: grid; gap: 16px; grid-template-columns: 42px 1fr auto; padding: 15px 18px; }
 .stage-number { color: var(--accent); font-size: 12px; font-weight: 800; }
+.stage:nth-of-type(6n+1) .stage-number { color: #1f5cc9; }
+.stage:nth-of-type(6n+2) .stage-number { color: #c9541f; }
+.stage:nth-of-type(6n+3) .stage-number { color: #7a2fc9; }
+.stage:nth-of-type(6n+4) .stage-number { color: #0f9d78; }
+.stage:nth-of-type(6n+5) .stage-number { color: #b8790a; }
+.stage:nth-of-type(6n+6) .stage-number { color: #c92f6c; }
 .stage strong, .stage span { display: block; }
 .stage span { color: var(--text-muted); font-size: 13px; margin-top: 4px; }
 .stage b { color: var(--text-faint); font-size: 11px; text-transform: uppercase; }
@@ -104,9 +110,9 @@ h4 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: v
 .stage.error b { color: var(--danger-text); }
 .stage.skipped { opacity: .6; }
 
-.intake-grid, .documents-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-.documents-grid { grid-template-columns: 320px 1fr; align-items: start; }
-.documents-grid.single-column { grid-template-columns: 1fr; max-width: 640px; }
+.intake-grid, .workspace-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.workspace-grid { grid-template-columns: 320px 1fr; align-items: start; }
+.workspace-detail { display: grid; gap: 24px; }
 .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
 
 .field-label { display: block; color: var(--text-muted); font-size: 12px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .06em; }
@@ -127,6 +133,17 @@ select, input[type="text"] { background: var(--surface-solid); border: 1px solid
 .sample-card h4 { margin: 4px 0; font-size: 15px; color: var(--text); text-transform: none; letter-spacing: 0; }
 .sample-card p { color: var(--text-muted); font-size: 12.5px; margin: 0; max-width: 320px; }
 .sample-type { background: var(--accent-soft-bg); border-radius: 999px; color: var(--accent-strong); font-size: 10px; font-weight: 800; letter-spacing: .06em; padding: 3px 9px; text-transform: uppercase; }
+.sample-type.type-contract { background: #e2ecfb; color: #1f5cc9; }
+.sample-type.type-invoice { background: #fbe7e2; color: #c9541f; }
+.sample-type.type-policy { background: #f2e6fb; color: #7a2fc9; }
+.sample-type.type-form { background: #fdf0d9; color: #b8790a; }
+.sample-type.type-generic { background: var(--accent-soft-bg); color: var(--accent-strong); }
+.sample-card { border-left: 3px solid transparent; }
+.sample-card:has(.type-contract) { border-left-color: #1f5cc9; }
+.sample-card:has(.type-invoice) { border-left-color: #c9541f; }
+.sample-card:has(.type-policy) { border-left-color: #7a2fc9; }
+.sample-card:has(.type-form) { border-left-color: #b8790a; }
+.sample-card:has(.type-generic) { border-left-color: var(--accent); }
 
 .document-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; max-height: 480px; overflow-y: auto; }
 .document-item { align-items: center; background: var(--surface-solid); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; padding: 12px 14px; gap: 10px; }
@@ -192,7 +209,7 @@ select, input[type="text"] { background: var(--surface-solid); border: 1px solid
 .evaluation-metric strong { color: var(--accent-strong); }
 
 @media (max-width: 900px) {
-  .intake-grid, .documents-grid { grid-template-columns: 1fr; }
+  .intake-grid, .workspace-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 700px) {
   .hero { flex-direction: column; align-items: flex-start; padding: 16px 0; }

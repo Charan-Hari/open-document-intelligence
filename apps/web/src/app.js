@@ -62,7 +62,7 @@ const els = {
   resultBannerContent: document.querySelector('#result-banner-content'),
 };
 
-const VIEWS = ['upload', 'result', 'documents', 'evaluation'];
+const VIEWS = ['upload', 'workspace', 'evaluation'];
 
 function setActiveView(view) {
   if (!VIEWS.includes(view)) view = 'upload';
@@ -171,7 +171,7 @@ async function loadSamples() {
         (sample) => `
         <article class="sample-card" data-sample-id="${sample.id}">
           <div>
-            <span class="sample-type">${escapeHtml(sample.document_type)}</span>
+            <span class="sample-type type-${escapeHtml(sample.document_type)}">${escapeHtml(sample.document_type)}</span>
             <h4>${escapeHtml(sample.title)}</h4>
             <p>${escapeHtml(sample.description)}</p>
           </div>
@@ -391,7 +391,7 @@ async function selectDocument(id) {
   try {
     const document_ = await apiFetch(`/v1/documents/${id}`);
     renderDetail(document_);
-    navigateTo('result');
+    navigateTo('workspace');
     await loadDocuments();
   } catch (error) {
     els.detailError.hidden = false;
@@ -406,7 +406,7 @@ async function runSample(sampleId, button) {
     const document_ = await apiFetch(`/v1/samples/${sampleId}/ingest`, { method: 'POST' });
     await loadDocuments();
     renderDetail(document_);
-    navigateTo('result');
+    navigateTo('workspace');
   } catch (error) {
     els.uploadError.hidden = false;
     els.uploadError.textContent = error.message;
@@ -437,7 +437,7 @@ async function submitUpload(event) {
     renderDetail(document_);
     els.uploadForm.reset();
     els.selectedFile.hidden = true;
-    navigateTo('result');
+    navigateTo('workspace');
   } catch (error) {
     els.uploadError.hidden = false;
     els.uploadError.textContent = error.message;
