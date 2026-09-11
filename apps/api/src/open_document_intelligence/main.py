@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from .audit import AuditStore
 from .evaluation import run_evaluation
@@ -297,6 +298,17 @@ def create_app(data_dir: Path | None = None, vector_store: VectorStore | None = 
         store.add(document)
         _record_processed(document)
         return document
+
+    # Optionally serve the static web UI from this same process. This keeps a
+    # single-container deployment (e.g. Hugging Face Spaces) simple: one port,
+    # no CORS configuration needed between the UI and the API. Controlled via
+    # ODI_WEB_DIR so local dev (separate `http.server` on :8080) and tests are
+    # unaffected when the directory isn't present.
+    web_dir = os.environ.get("ODI_WEB_DIR")
+    if web_dir:
+        web_path = Path(web_dir)
+        if web_path.is_dir():
+            app.mount("/", StaticFiles(directory=web_path, html=True), name="web")
 
     return app
 

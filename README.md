@@ -3,6 +3,10 @@
 A local-first document intelligence workbench for inspecting contracts, policies,
 invoices, forms, and operational documents with evidence-backed results.
 
+> **Live demo:** _add your Hugging Face Space URL here once deployed, e.g.
+> `https://huggingface.co/spaces/<your-username>/open-document-intelligence`._
+> No signup, no card, no data leaves the container — see [Deploying a free live demo](#deploying-a-free-live-demo).
+
 ## Product direction
 
 The platform makes every processing phase visible:
@@ -170,6 +174,7 @@ as successful.
 | `ODI_OLLAMA_MODEL` | `llama3.2` | Ollama model name to use for generation. |
 | `ODI_OLLAMA_TIMEOUT_SECONDS` | `5` | Request timeout before falling back to the extractive generator. |
 | `ODI_TESSERACT_CMD` | _(auto-detected)_ | Path to the Tesseract binary, for non-standard installs. |
+| `ODI_WEB_DIR` | _(unset)_ | If set to a directory, the API mounts and serves the static web UI from that path at `/` — used to run the API and UI as a single process (see deployment below). |
 
 Ollama, `sentence-transformers`, and Tesseract/`pytesseract` are all entirely
 optional and local-only — nothing in this project calls a paid or cloud API.
@@ -186,6 +191,37 @@ python -m http.server 8080
 ```
 
 Then open `http://localhost:8080` with the API running.
+
+## Deploying a free live demo
+
+A `Dockerfile` at the repo root builds a single container that serves both the
+API and the static web UI on one port (`7860`), so anyone can try the app
+without a local checkout — no card, no signup, no paid API keys.
+
+**Hugging Face Spaces (recommended, free, no card required):**
+
+1. Create a new Space at <https://huggingface.co/new-space>, choose the
+   **Docker** SDK, and set visibility to public.
+2. Push this repository to the Space's git remote (Spaces are just git repos):
+   ```powershell
+   git remote add space https://huggingface.co/spaces/<your-username>/open-document-intelligence
+   git push space main
+   ```
+3. The Space builds the `Dockerfile` and starts the container automatically.
+   Once it's live, the URL is `https://huggingface.co/spaces/<your-username>/open-document-intelligence`.
+4. Add that URL to the "Live demo" line near the top of this README.
+
+Notes on the free tier:
+
+- Free Spaces use CPU-only hardware and ephemeral storage — uploaded
+  documents and the vector index reset whenever the Space restarts or sleeps.
+  That's expected for a public demo; nothing sensitive should be uploaded to it.
+- The image installs only the API's core dependencies (no `ml`/`ocr` extras)
+  to keep the build small and fast on free hardware. Embeddings fall back to
+  the deterministic hashing backend and OCR is reported as unavailable, both
+  of which degrade gracefully by design (see the table above).
+- Any other Docker-capable free host (Render, Fly.io, etc.) works the same
+  way: build the root `Dockerfile` and expose port `7860`.
 
 ## Principles
 

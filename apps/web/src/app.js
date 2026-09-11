@@ -1,4 +1,13 @@
-const API_BASE = window.ODI_API_BASE || 'http://localhost:8000';
+// Default to same-origin (empty base) so a single combined deployment (e.g.
+// the Docker image, Hugging Face Spaces) just works with no config. Local
+// dev serves the UI from a separate static server (see README), so it falls
+// back to the API's default port in that one specific case.
+const API_BASE =
+  window.ODI_API_BASE !== undefined
+    ? window.ODI_API_BASE
+    : window.location.port === '8080'
+      ? 'http://localhost:8000'
+      : '';
 
 const STAGE_LABELS = {
   upload: 'Upload & validate',
