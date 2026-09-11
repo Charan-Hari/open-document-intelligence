@@ -3,9 +3,7 @@
 A local-first document intelligence workbench for inspecting contracts, policies,
 invoices, forms, and operational documents with evidence-backed results.
 
-> **Live demo:** _add your Hugging Face Space URL here once deployed, e.g.
-> `https://huggingface.co/spaces/<your-username>/open-document-intelligence`._
-> No signup, no card, no data leaves the container — see [Deploying a free live demo](#deploying-a-free-live-demo).
+> **Live demo:** https://open-document-intelligence.onrender.com — no signup, no card, no data leaves the container. (Free tier: the service sleeps after 15 min of inactivity; first load may take ~30-60s to wake up.)
 
 ## Product direction
 
