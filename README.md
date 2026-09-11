@@ -23,6 +23,8 @@ embeddings, and language models can be added without changing the API contract.
 The web workspace walks every document through the same six-stage pipeline and
 keeps humans in the loop for anything the system isn't confident about.
 
+![Demo: upload, pipeline, extraction, and grounded Q&A](docs/screenshots/demo.gif)
+
 | | |
 |---|---|
 | ![Hero section](docs/screenshots/01-hero.png) **Private by default.** No document ever leaves your machine — everything runs against a local API with no third-party keys or paid services required. | ![Processing pipeline](docs/screenshots/02-pipeline.png) **Every phase is visible.** Upload, parsing, field extraction, evidence linking, indexing, and review are reported as discrete, inspectable steps — not a black box. |
