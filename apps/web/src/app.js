@@ -28,7 +28,7 @@ const state = {
 const els = {
   docCount: document.querySelector('#doc-count'),
   pipeline: document.querySelector('#pipeline'),
-  status: document.querySelector('#status'),
+  status: document.querySelector('#pipeline-summary'),
   uploadForm: document.querySelector('#upload-form'),
   uploadButton: document.querySelector('#upload-button'),
   uploadError: document.querySelector('#upload-error'),
