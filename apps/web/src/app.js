@@ -5,10 +5,11 @@ const STAGE_LABELS = {
   parsing: 'Parse document',
   extraction: 'Extract fields',
   evidence: 'Find evidence',
+  indexing: 'Index for retrieval',
   review: 'Human review',
 };
 
-const STAGE_ORDER = ['upload', 'parsing', 'extraction', 'evidence', 'review'];
+const STAGE_ORDER = ['upload', 'parsing', 'extraction', 'evidence', 'indexing', 'review'];
 
 const state = {
   documents: [],
@@ -263,22 +264,22 @@ async function askQuestion(event) {
   els.questionAnswer.hidden = false;
   els.questionAnswer.innerHTML = '<span class="muted">Searching document evidence…</span>';
   try {
-    const result = await apiFetch(`/v1/documents/${state.selectedId}/question`, {
+    const result = await apiFetch(`/v1/documents/${state.selectedId}/rag`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question: els.questionInput.value.trim() }),
     });
-    const citations = result.citations.length
-      ? `<ul class="answer-citations">${result.citations.map((citation) => `
-          <li><span>p.${citation.page} · lines ${citation.line_start}-${citation.line_end}</span>
-            ${escapeHtml(citation.text)}</li>`).join('')}</ul>`
-      : '<p class="muted">No supporting citations were found.</p>';
+    const evidence = result.evidence.length
+      ? `<ul class="answer-citations">${result.evidence.map((item) => `
+          <li><span>p.${item.page} · lines ${item.line_start}-${item.line_end} · ${escapeHtml(item.method)} match</span>
+            ${escapeHtml(item.text)}</li>`).join('')}</ul>`
+      : '<p class="muted">No supporting evidence was found.</p>';
     els.questionAnswer.innerHTML = `
       <div class="answer-header">
         <strong>${result.grounded ? 'Grounded answer' : 'Insufficient evidence'}</strong>
-        <span>${Math.round(result.confidence * 100)}% match confidence</span>
+        <span>${Math.round(result.confidence * 100)}% match confidence · generated via ${escapeHtml(result.generation_method)}</span>
       </div>
-      <p>${escapeHtml(result.answer)}</p>${citations}`;
+      <p>${escapeHtml(result.answer)}</p>${evidence}`;
   } catch (error) {
     els.questionAnswer.hidden = true;
     els.questionError.hidden = false;

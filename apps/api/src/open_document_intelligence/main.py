@@ -1,28 +1,34 @@
 import os
 from pathlib import Path
 from typing import Annotated
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
 from .models import (
+    DocumentChunk,
     DocumentDetail,
     DocumentSource,
     DocumentSummary,
     DocumentType,
     FieldStatus,
+    ProcessingJob,
     ProcessingStatus,
     QuestionRequest,
     QuestionResponse,
+    RagRequest,
+    RagResponse,
     ReviewDecision,
     ReviewRequest,
     StageStatus,
 )
 from .pipeline import ValidationError, process_document, validate_upload
+from .rag import answer_with_rag
 from .retrieval import answer_question
 from .samples import SAMPLE_CATALOG, get_sample, read_sample_bytes
 from .storage import DocumentStore
+from .vectorstore import VectorStore
 
 DEFAULT_DATA_DIR = Path(
     os.environ.get("ODI_DATA_DIR", Path(__file__).resolve().parents[2] / ".data")
@@ -31,14 +37,21 @@ DEFAULT_DATA_DIR = Path(
 PENDING_FIELD_STATUSES = (FieldStatus.needs_review, FieldStatus.missing)
 
 
-def create_app(data_dir: Path | None = None) -> FastAPI:
-    store = DocumentStore(data_dir or DEFAULT_DATA_DIR)
+def create_app(data_dir: Path | None = None, vector_store: VectorStore | None = None) -> FastAPI:
+    resolved_data_dir = data_dir or DEFAULT_DATA_DIR
+    store = DocumentStore(resolved_data_dir)
+    vectors = vector_store or VectorStore(resolved_data_dir / "vectors.db")
+
+    def index_chunks(document_id: UUID, chunks: list[DocumentChunk]) -> None:
+        vectors.index_chunks(document_id, chunks)
 
     app = FastAPI(
         title="Open Document Intelligence",
         version="0.1.0",
         description="Local-first, evidence-backed document processing workbench.",
     )
+    # CORS defaults are intentionally restrictive: no wildcard origin, no
+    # credentials, and only the methods/headers this API actually uses.
     allowed_origins = [
         origin.strip()
         for origin in os.environ.get("ODI_ALLOWED_ORIGINS", "http://localhost:8080").split(",")
@@ -47,15 +60,21 @@ def create_app(data_dir: Path | None = None) -> FastAPI:
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allowed_origins,
+        allow_credentials=False,
         allow_methods=["GET", "POST"],
         allow_headers=["Content-Type"],
     )
     app.state.store = store
+    app.state.vector_store = vectors
 
     def get_store() -> DocumentStore:
         return app.state.store
 
+    def get_vector_store() -> VectorStore:
+        return app.state.vector_store
+
     StoreDep = Annotated[DocumentStore, Depends(get_store)]
+    VectorStoreDep = Annotated[VectorStore, Depends(get_vector_store)]
 
     @app.get("/health", tags=["operations"])
     def health() -> dict[str, str]:
@@ -83,6 +102,7 @@ def create_app(data_dir: Path | None = None) -> FastAPI:
             content=content,
             document_type=entry.document_type,
             source=DocumentSource.sample,
+            indexer=index_chunks,
         )
         if document.status != ProcessingStatus.failed:
             store.save_raw_file(document.id, entry.filename, content)
@@ -100,6 +120,21 @@ def create_app(data_dir: Path | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Document was not found.")
         return document
 
+    @app.get(
+        "/v1/documents/{document_id}/workflow",
+        response_model=ProcessingJob,
+        tags=["documents"],
+    )
+    def get_workflow(document_id: str, store: StoreDep) -> ProcessingJob:
+        document = store.get(document_id)
+        if document is None:
+            raise HTTPException(status_code=404, detail="Document was not found.")
+        if document.workflow is None:
+            raise HTTPException(
+                status_code=404, detail="No workflow record is available for this document."
+            )
+        return document.workflow
+
     @app.post(
         "/v1/documents/{document_id}/question",
         response_model=QuestionResponse,
@@ -112,6 +147,21 @@ def create_app(data_dir: Path | None = None) -> FastAPI:
         if document is None:
             raise HTTPException(status_code=404, detail="Document was not found.")
         return answer_question(request.question, document.chunks)
+
+    @app.post(
+        "/v1/documents/{document_id}/rag",
+        response_model=RagResponse,
+        tags=["retrieval"],
+    )
+    def rag_document(
+        document_id: str, request: RagRequest, store: StoreDep, vectors: VectorStoreDep
+    ) -> RagResponse:
+        document = store.get(document_id)
+        if document is None:
+            raise HTTPException(status_code=404, detail="Document was not found.")
+        return answer_with_rag(
+            request.question, document.chunks, vector_store=vectors, document_id=document.id
+        )
 
     @app.post("/v1/documents", response_model=DocumentDetail, status_code=201, tags=["documents"])
     async def upload_document(
@@ -133,6 +183,7 @@ def create_app(data_dir: Path | None = None) -> FastAPI:
             content=content,
             document_type=document_type,
             source=DocumentSource.upload,
+            indexer=index_chunks,
         )
         if document.status != ProcessingStatus.failed:
             store.save_raw_file(document.id, filename, content)
@@ -196,6 +247,7 @@ def create_app(data_dir: Path | None = None) -> FastAPI:
             content=content,
             document_type=entry.document_type,
             source=DocumentSource.sample,
+            indexer=index_chunks,
         )
         store.save_raw_file(document.id, entry.filename, content)
         store.add(document)

@@ -16,6 +16,7 @@ def test_demo_document_exposes_processing_stages(client) -> None:
         "parsing",
         "extraction",
         "evidence",
+        "indexing",
         "review",
     ]
 

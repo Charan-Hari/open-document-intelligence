@@ -20,6 +20,9 @@ dev = [
   "pytest>=8.0,<9.0",
   "ruff>=0.9,<1.0",
 ]
+ml = [
+  "sentence-transformers>=3.0,<4.0",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/open_document_intelligence"]

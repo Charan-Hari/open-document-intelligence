@@ -10,6 +10,7 @@ class ProcessingStage(StrEnum):
     parsing = "parsing"
     extraction = "extraction"
     evidence = "evidence"
+    indexing = "indexing"
     review = "review"
 
 
@@ -82,6 +83,32 @@ class ExtractedField(BaseModel):
     evidence_id: str | None = None
 
 
+class WorkflowMode(StrEnum):
+    """How a processing job actually ran.
+
+    This project does not implement a background job queue. ``sync`` is the
+    only honest value: a document is fully processed, start to finish,
+    within the request that created it. The model exists so clients can
+    inspect phase-by-phase results and failures without the API implying a
+    poll-for-status async job it does not have.
+    """
+
+    sync = "sync"
+
+
+class ProcessingJob(BaseModel):
+    """A record of one processing run, exposed for transparency and audit."""
+
+    document_id: UUID
+    mode: WorkflowMode = WorkflowMode.sync
+    status: ProcessingStatus
+    stages: list[PipelineStage] = Field(default_factory=list)
+    started_at: datetime
+    completed_at: datetime
+    duration_ms: float = Field(ge=0)
+    error: str | None = None
+
+
 class DocumentSummary(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     filename: str
@@ -102,6 +129,7 @@ class DocumentDetail(DocumentSummary):
     page_count: int | None = None
     char_count: int | None = None
     error: str | None = None
+    workflow: ProcessingJob | None = None
 
 
 class SampleCatalogEntry(BaseModel):
@@ -141,3 +169,49 @@ class QuestionResponse(BaseModel):
     confidence: float = Field(ge=0, le=1)
     citations: list[QuestionCitation] = Field(default_factory=list)
     grounded: bool
+
+
+class RetrievalMethod(StrEnum):
+    vector = "vector"
+    lexical = "lexical"
+    none = "none"
+
+
+class GenerationMethod(StrEnum):
+    ollama = "ollama"
+    extractive = "extractive"
+    none = "none"
+
+
+class RagRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=1000)
+
+
+class RetrievedEvidence(BaseModel):
+    """One piece of retrieval evidence, kept separate from any generated text."""
+
+    chunk_id: str
+    page: int
+    line_start: int
+    line_end: int
+    text: str
+    score: float = Field(ge=0, le=1)
+    method: RetrievalMethod
+
+
+class RagResponse(BaseModel):
+    """A RAG answer with retrieval evidence and generation kept explicit.
+
+    ``evidence`` is always the retrieved, citable source material and is
+    populated the same way regardless of whether a generator is available.
+    ``answer``/``generation_method`` describe how the natural-language
+    answer was produced: an optional local Ollama model, or a safe
+    extractive fallback that only ever quotes retrieved evidence.
+    """
+
+    question: str
+    evidence: list[RetrievedEvidence] = Field(default_factory=list)
+    answer: str
+    generation_method: GenerationMethod
+    grounded: bool
+    confidence: float = Field(ge=0, le=1)
