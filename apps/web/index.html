@@ -18,16 +18,15 @@
 
     <nav id="nav-drawer" class="nav-tabs">
       <a href="#upload" class="nav-link" data-view="upload"><span class="nav-step">1</span>Upload</a>
-      <a href="#result" class="nav-link" data-view="result"><span class="nav-step">2</span>Result</a>
-      <a href="#documents" class="nav-link" data-view="documents"><span class="nav-step">3</span>Documents</a>
-      <a href="#evaluation" class="nav-link" data-view="evaluation"><span class="nav-step">4</span>Evaluation</a>
+      <a href="#workspace" class="nav-link" data-view="workspace"><span class="nav-step">2</span>Workspace</a>
+      <a href="#evaluation" class="nav-link" data-view="evaluation"><span class="nav-step">3</span>Evaluation</a>
     </nav>
 
     <main class="shell">
       <section id="view-upload" class="view">
         <section class="hero">
           <p class="hero-copy">Upload a document — every extracted field, citation, and confidence score is checked before it's trusted.</p>
-          <a class="hero-metric" href="#documents" data-view="documents">
+          <a class="hero-metric" href="#workspace" data-view="workspace">
             <strong id="doc-count">0</strong>
             <span>processed</span>
           </a>
@@ -80,82 +79,80 @@
         </section>
       </section>
 
-      <section id="view-result" class="view">
+      <section id="view-workspace" class="view">
         <section id="result-banner" class="workspace result-banner" hidden>
           <div id="result-banner-content"></div>
         </section>
 
-        <section class="workspace">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Processing pipeline</p>
-              <h3>What happens to every document</h3>
+        <div class="workspace-grid">
+          <section class="panel doc-list-panel">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Workspace</p>
+                <h3>Documents</h3>
+              </div>
+              <button id="refresh-documents" class="ghost-button" type="button">Refresh</button>
             </div>
-            <span id="status" class="status">Awaiting document</span>
-          </div>
-          <div id="pipeline" class="pipeline"></div>
-        </section>
+            <ul id="document-list" class="document-list">
+              <li class="muted">No documents yet. Upload one or run a sample above.</li>
+            </ul>
+          </section>
 
-        <section class="workspace">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Detail</p>
-              <h3 id="detail-title">Select a document</h3>
-            </div>
-            <span id="detail-confidence" class="confidence-pill" hidden></span>
-          </div>
-
-          <div id="detail-empty" class="muted">
-            Choose a document from the list, upload a file, or run a sample to see
-            extracted fields, citations, and review actions here.
-          </div>
-
-          <div id="detail-content" hidden>
-            <p id="detail-meta" class="detail-meta"></p>
-            <p id="ocr-status" class="ocr-status" hidden></p>
-            <p id="detail-error" class="form-error" hidden></p>
-
-            <h4>Extracted fields</h4>
-            <div id="field-list" class="field-list"></div>
-
-            <h4>Evidence &amp; citations</h4>
-            <ul id="evidence-list" class="evidence-list"></ul>
-
-            <h4>Source preview</h4>
-            <pre id="text-preview" class="text-preview"></pre>
-
-            <h4>Audit trail</h4>
-            <ul id="audit-list" class="audit-list"></ul>
-
-            <h4>Ask this document</h4>
-            <form id="question-form" class="question-form">
-              <input id="question-input" type="text" maxlength="1000"
-                placeholder="e.g. Who owns this policy?" />
-              <button class="secondary-button" type="submit">Find evidence</button>
-            </form>
-            <p id="question-error" class="form-error" hidden></p>
-            <div id="question-answer" class="question-answer" hidden></div>
-          </div>
-        </section>
-      </section>
-
-      <section id="view-documents" class="view">
-        <section class="workspace documents">
-          <div class="documents-grid single-column">
-            <div class="panel doc-list-panel">
+          <div class="workspace-detail">
+            <section class="workspace">
               <div class="section-heading">
                 <div>
-                  <p class="eyebrow">Workspace</p>
-                  <h3>Documents</h3>
+                  <p class="eyebrow">Processing pipeline</p>
+                  <h3>What happens to every document</h3>
                 </div>
-                <button id="refresh-documents" class="ghost-button" type="button">Refresh</button>
+                <span id="status" class="status">Awaiting document</span>
               </div>
-              <ul id="document-list" class="document-list">
-                <li class="muted">No documents yet. Upload one or run a sample above.</li>
-              </ul>
-            </div>
+              <div id="pipeline" class="pipeline"></div>
+            </section>
+
+            <section class="workspace">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Detail</p>
+                  <h3 id="detail-title">Select a document</h3>
+                </div>
+                <span id="detail-confidence" class="confidence-pill" hidden></span>
+              </div>
+
+              <div id="detail-empty" class="muted">
+                Choose a document from the list, upload a file, or run a sample to see
+                extracted fields, citations, and review actions here.
+              </div>
+
+              <div id="detail-content" hidden>
+                <p id="detail-meta" class="detail-meta"></p>
+                <p id="ocr-status" class="ocr-status" hidden></p>
+                <p id="detail-error" class="form-error" hidden></p>
+
+                <h4>Extracted fields</h4>
+                <div id="field-list" class="field-list"></div>
+
+                <h4>Evidence &amp; citations</h4>
+                <ul id="evidence-list" class="evidence-list"></ul>
+
+                <h4>Source preview</h4>
+                <pre id="text-preview" class="text-preview"></pre>
+
+                <h4>Audit trail</h4>
+                <ul id="audit-list" class="audit-list"></ul>
+
+                <h4>Ask this document</h4>
+                <form id="question-form" class="question-form">
+                  <input id="question-input" type="text" maxlength="1000"
+                    placeholder="e.g. Who owns this policy?" />
+                  <button class="secondary-button" type="submit">Find evidence</button>
+                </form>
+                <p id="question-error" class="form-error" hidden></p>
+                <div id="question-answer" class="question-answer" hidden></div>
+              </div>
+            </section>
           </div>
-        </section>
+        </div>
       </section>
 
       <section id="view-evaluation" class="view">
