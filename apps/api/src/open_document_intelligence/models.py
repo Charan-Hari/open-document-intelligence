@@ -50,6 +50,22 @@ class FieldStatus(StrEnum):
     corrected = "corrected"
 
 
+class OcrStatus(StrEnum):
+    """Document-level summary of whether local OCR was needed and/or used.
+
+    Exists so clients never have to infer OCR behavior from missing text:
+    every document is explicit about whether it had scanned pages, whether
+    OCR ran successfully, or whether OCR would be needed but isn't available
+    on this machine (in which case results are honestly incomplete rather
+    than silently blank).
+    """
+
+    not_needed = "not_needed"
+    used = "used"
+    unavailable = "unavailable"
+    failed = "failed"
+
+
 class PipelineStage(BaseModel):
     stage: ProcessingStage
     label: str
@@ -130,6 +146,10 @@ class DocumentDetail(DocumentSummary):
     char_count: int | None = None
     error: str | None = None
     workflow: ProcessingJob | None = None
+    ocr_status: OcrStatus = OcrStatus.not_needed
+    pages_ocr_used: int = 0
+    pages_needing_ocr: int = 0
+    ocr_detail: str | None = None
 
 
 class SampleCatalogEntry(BaseModel):
@@ -138,6 +158,10 @@ class SampleCatalogEntry(BaseModel):
     description: str
     document_type: DocumentType
     filename: str
+    source: str = (
+        "Synthetic example authored for this project; not derived from any real document."
+    )
+    license: str = "CC0-1.0 (public domain dedication) — free to reuse without restriction."
 
 
 class ReviewDecision(StrEnum):
@@ -215,3 +239,63 @@ class RagResponse(BaseModel):
     generation_method: GenerationMethod
     grounded: bool
     confidence: float = Field(ge=0, le=1)
+
+
+class AuditEventType(StrEnum):
+    """The kinds of operations that get an audit trail entry."""
+
+    document_processed = "document_processed"
+    field_reviewed = "field_reviewed"
+
+
+class AuditEvent(BaseModel):
+    """One immutable, persisted record of something that happened to a document.
+
+    Audit events are append-only: processing a document and reviewing a
+    field both write an event here in addition to updating the document's
+    own state, so there is a durable history of *when* and *by whom* changes
+    were made, independent of the document's current (mutable) state.
+    """
+
+    id: str
+    document_id: UUID
+    event_type: AuditEventType
+    actor: str = "system"
+    detail: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class EvaluationFieldCase(BaseModel):
+    """One extraction accuracy check against a hand-labeled expected value."""
+
+    sample_id: str
+    field_key: str
+    expected_value: str | None
+    actual_value: str | None
+    correct: bool
+
+
+class EvaluationRetrievalCase(BaseModel):
+    """One retrieval check: did evidence for a question contain the expected keyword?"""
+
+    sample_id: str
+    question: str
+    expected_keyword: str
+    found: bool
+    top_score: float | None = None
+
+
+class EvaluationReport(BaseModel):
+    """Aggregate extraction/retrieval metrics computed against the bundled samples.
+
+    This is a local, offline evaluation harness: it re-processes the bundled
+    sample documents and compares results against a small hand-labeled
+    golden set, so extraction and retrieval regressions are caught without
+    any external eval service.
+    """
+
+    extraction_accuracy: float = Field(ge=0, le=1)
+    extraction_cases: list[EvaluationFieldCase] = Field(default_factory=list)
+    retrieval_hit_rate: float = Field(ge=0, le=1)
+    retrieval_cases: list[EvaluationRetrievalCase] = Field(default_factory=list)
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

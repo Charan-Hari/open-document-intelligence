@@ -30,6 +30,34 @@ def test_sample_catalog_is_listed(client) -> None:
     assert {"sample-contract", "sample-invoice", "sample-policy", "sample-form"} <= ids
 
 
+def test_sample_catalog_entries_declare_source_and_license(client) -> None:
+    response = client.get("/v1/samples")
+
+    assert response.status_code == 200
+    for entry in response.json():
+        assert entry["source"], f"sample '{entry['id']}' is missing a source description"
+        assert entry["license"], f"sample '{entry['id']}' is missing a license"
+
+
+def test_scanned_sample_is_in_catalog_and_ingestible(client) -> None:
+    catalog = client.get("/v1/samples").json()
+    entry = next(item for item in catalog if item["id"] == "sample-scanned-notice")
+    assert entry["filename"].endswith(".pdf")
+
+    response = client.post("/v1/samples/sample-scanned-notice/ingest")
+
+    assert response.status_code == 201
+    body = response.json()
+    # Whether or not the local OCR engine is installed on the test machine,
+    # the document must never silently claim OCR wasn't needed.
+    assert body["ocr_status"] in {"used", "unavailable"}
+    if body["ocr_status"] == "unavailable":
+        assert body["pages_needing_ocr"] == 1
+        assert body["ocr_detail"]
+    else:
+        assert body["pages_ocr_used"] == 1
+
+
 def test_sample_ingest_extracts_deterministic_fields(client) -> None:
     response = client.post("/v1/samples/sample-invoice/ingest")
 

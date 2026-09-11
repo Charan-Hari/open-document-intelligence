@@ -24,13 +24,14 @@ from .models import (
     DocumentDetail,
     DocumentSource,
     DocumentType,
+    OcrStatus,
     PipelineStage,
     ProcessingJob,
     ProcessingStage,
     ProcessingStatus,
     StageStatus,
 )
-from .parsing import Page, ParsingError, parse_document
+from .parsing import Page, ParsedDocument, ParsingError, parse_document
 
 MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 ALLOWED_EXTENSIONS = {".txt", ".md", ".csv", ".pdf"}
@@ -137,15 +138,21 @@ def process_document(
             workflow=job,
         )
 
+    ocr_status, ocr_detail = _resolve_ocr_status(parsed)
+    parsing_detail = (
+        f"Extracted {parsed.char_count:,} characters across "
+        f"{parsed.page_count} page(s)."
+    )
+    if ocr_status != OcrStatus.not_needed:
+        parsing_detail = f"{parsing_detail} {ocr_detail}"
     stages.append(
         PipelineStage(
             stage=ProcessingStage.parsing,
             label="Parse document",
-            status=StageStatus.complete,
-            detail=(
-                f"Extracted {parsed.char_count:,} characters across "
-                f"{parsed.page_count} page(s)."
-            ),
+            status=StageStatus.needs_review
+            if ocr_status in (OcrStatus.unavailable, OcrStatus.failed)
+            else StageStatus.complete,
+            detail=parsing_detail,
         )
     )
 
@@ -204,20 +211,32 @@ def process_document(
     review_flagged = [
         field for field in fields if field.status.value in ("needs_review", "missing")
     ]
+    review_needed = bool(review_flagged) or ocr_status in (OcrStatus.unavailable, OcrStatus.failed)
+    review_detail_parts = []
+    if review_flagged:
+        review_detail_parts.append(f"{len(review_flagged)} field(s) need reviewer confirmation.")
+    if ocr_status in (OcrStatus.unavailable, OcrStatus.failed):
+        review_detail_parts.append(
+            "Some pages could not be read locally and may need manual transcription."
+        )
     stages.append(
         PipelineStage(
             stage=ProcessingStage.review,
             label="Human review",
-            status=StageStatus.needs_review if review_flagged else StageStatus.complete,
+            status=StageStatus.needs_review if review_needed else StageStatus.complete,
             detail=(
-                f"{len(review_flagged)} field(s) need reviewer confirmation."
-                if review_flagged
+                " ".join(review_detail_parts)
+                if review_detail_parts
                 else "All extracted fields met the confidence threshold."
             ),
         )
     )
 
-    status = ProcessingStatus.needs_review if flagged else ProcessingStatus.ready
+    status = (
+        ProcessingStatus.needs_review
+        if flagged or ocr_status in (OcrStatus.unavailable, OcrStatus.failed)
+        else ProcessingStatus.ready
+    )
     confidence = overall_confidence(fields)
     completed_at = datetime.now(UTC)
     job = ProcessingJob(
@@ -247,7 +266,38 @@ def process_document(
         char_count=parsed.char_count,
         error=None,
         workflow=job,
+        ocr_status=ocr_status,
+        pages_ocr_used=parsed.pages_ocr_used,
+        pages_needing_ocr=parsed.pages_needing_ocr,
+        ocr_detail=ocr_detail,
     )
+
+
+def _resolve_ocr_status(parsed: ParsedDocument) -> tuple[OcrStatus, str | None]:
+    """Summarize per-page OCR outcomes into one document-level status/detail.
+
+    Unavailability takes priority over a partial success so a document is
+    never reported as fully handled when at least one scanned page could
+    not be read locally. Never silently reports ``not_needed`` for a
+    document that actually has unreadable scanned pages.
+    """
+    if parsed.pages_needing_ocr:
+        return (
+            OcrStatus.unavailable,
+            f"{parsed.pages_needing_ocr} page(s) look scanned and need OCR, which is "
+            f"not available locally: {parsed.ocr_availability_reason}",
+        )
+    if parsed.pages_ocr_failed:
+        return (
+            OcrStatus.failed,
+            f"{parsed.pages_ocr_failed} page(s) were scanned and OCR was attempted but failed.",
+        )
+    if parsed.pages_ocr_used:
+        return (
+            OcrStatus.used,
+            f"{parsed.pages_ocr_used} page(s) had no text layer; local OCR recovered their text.",
+        )
+    return OcrStatus.not_needed, None
 
 
 def _build_chunks(pages: list[Page]) -> list[DocumentChunk]:

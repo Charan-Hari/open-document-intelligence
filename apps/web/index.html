@@ -93,6 +93,22 @@
         <div id="pipeline" class="pipeline"></div>
       </section>
 
+      <section class="workspace">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Quality</p>
+            <h3>Local evaluation harness</h3>
+          </div>
+          <button id="run-evaluation" class="ghost-button" type="button">Run evaluation</button>
+        </div>
+        <p class="muted">
+          Re-runs deterministic extraction and retrieval against a small hand-labeled
+          golden set of the bundled samples, entirely locally.
+        </p>
+        <div id="evaluation-result" class="evaluation-result" hidden></div>
+        <p id="evaluation-error" class="form-error" hidden></p>
+      </section>
+
       <section class="workspace documents">
         <div class="documents-grid">
           <div class="panel doc-list-panel">
@@ -124,6 +140,7 @@
 
             <div id="detail-content" hidden>
               <p id="detail-meta" class="detail-meta"></p>
+              <p id="ocr-status" class="ocr-status" hidden></p>
               <p id="detail-error" class="form-error" hidden></p>
 
               <h4>Extracted fields</h4>
@@ -134,6 +151,9 @@
 
               <h4>Source preview</h4>
               <pre id="text-preview" class="text-preview"></pre>
+
+              <h4>Audit trail</h4>
+              <ul id="audit-list" class="audit-list"></ul>
 
               <h4>Ask this document</h4>
               <form id="question-form" class="question-form">

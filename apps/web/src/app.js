@@ -37,13 +37,18 @@ const els = {
   detailContent: document.querySelector('#detail-content'),
   detailMeta: document.querySelector('#detail-meta'),
   detailError: document.querySelector('#detail-error'),
+  ocrStatus: document.querySelector('#ocr-status'),
   fieldList: document.querySelector('#field-list'),
   evidenceList: document.querySelector('#evidence-list'),
   textPreview: document.querySelector('#text-preview'),
+  auditList: document.querySelector('#audit-list'),
   questionForm: document.querySelector('#question-form'),
   questionInput: document.querySelector('#question-input'),
   questionError: document.querySelector('#question-error'),
   questionAnswer: document.querySelector('#question-answer'),
+  runEvaluation: document.querySelector('#run-evaluation'),
+  evaluationResult: document.querySelector('#evaluation-result'),
+  evaluationError: document.querySelector('#evaluation-error'),
 };
 
 function escapeHtml(value) {
@@ -224,6 +229,53 @@ function renderEvidence(document) {
     .join('');
 }
 
+const OCR_STATUS_LABELS = {
+  not_needed: null,
+  used: 'OCR recovered text from scanned page(s)',
+  unavailable: 'OCR needed but unavailable locally',
+  failed: 'OCR was attempted but failed',
+};
+
+function renderOcrStatus(document) {
+  const label = OCR_STATUS_LABELS[document.ocr_status];
+  if (!label) {
+    els.ocrStatus.hidden = true;
+    return;
+  }
+  els.ocrStatus.hidden = false;
+  els.ocrStatus.className = `ocr-status ocr-${document.ocr_status}`;
+  els.ocrStatus.textContent = document.ocr_detail ? `${label}: ${document.ocr_detail}` : label;
+}
+
+function auditEventLabel(eventType) {
+  return {
+    document_processed: 'Processed',
+    field_reviewed: 'Reviewed',
+  }[eventType] || eventType;
+}
+
+async function loadAudit(documentId) {
+  try {
+    const events = await apiFetch(`/v1/documents/${documentId}/audit`);
+    if (!events.length) {
+      els.auditList.innerHTML = '<li class="muted">No audit events recorded yet.</li>';
+      return;
+    }
+    els.auditList.innerHTML = events
+      .map(
+        (event) => `
+        <li>
+          <span class="audit-time">${new Date(event.created_at).toLocaleString()}</span>
+          <span class="audit-type">${escapeHtml(auditEventLabel(event.event_type))}</span>
+          <span class="audit-detail">${escapeHtml(event.detail)} (${escapeHtml(event.actor)})</span>
+        </li>`
+      )
+      .join('');
+  } catch (error) {
+    els.auditList.innerHTML = `<li class="form-error">Could not load audit trail: ${escapeHtml(error.message)}</li>`;
+  }
+}
+
 function renderDetail(document) {
   state.selectedId = document.id;
   els.detailEmpty.hidden = true;
@@ -249,12 +301,14 @@ function renderDetail(document) {
     els.detailError.hidden = true;
   }
 
+  renderOcrStatus(document);
   renderFields(document);
   renderEvidence(document);
   els.textPreview.textContent = document.text_preview || '(no preview available)';
   renderStages(document.stages);
   els.questionAnswer.hidden = true;
   els.questionAnswer.innerHTML = '';
+  loadAudit(document.id);
 }
 
 async function askQuestion(event) {
@@ -430,6 +484,40 @@ function wireEvents() {
       }
     }
   });
+
+  els.runEvaluation.addEventListener('click', runEvaluation);
+}
+
+async function runEvaluation() {
+  els.evaluationError.hidden = true;
+  els.evaluationResult.hidden = false;
+  els.evaluationResult.innerHTML = '<span class="muted">Running local evaluation…</span>';
+  els.runEvaluation.disabled = true;
+  try {
+    const report = await apiFetch('/v1/evaluation');
+    const extractionPct = Math.round(report.extraction_accuracy * 100);
+    const retrievalPct = Math.round(report.retrieval_hit_rate * 100);
+    const failedExtraction = report.extraction_cases.filter((c) => !c.correct);
+    const failedRetrieval = report.retrieval_cases.filter((c) => !c.found);
+    els.evaluationResult.innerHTML = `
+      <div class="evaluation-metrics">
+        <span class="evaluation-metric">Extraction accuracy: <strong>${extractionPct}%</strong>
+          (${report.extraction_cases.length} case(s))</span>
+        <span class="evaluation-metric">Retrieval hit rate: <strong>${retrievalPct}%</strong>
+          (${report.retrieval_cases.length} case(s))</span>
+      </div>
+      ${
+        failedExtraction.length || failedRetrieval.length
+          ? `<p class="form-error">${failedExtraction.length + failedRetrieval.length} case(s) did not match the expected result.</p>`
+          : '<p class="muted">All golden cases matched.</p>'
+      }`;
+  } catch (error) {
+    els.evaluationResult.hidden = true;
+    els.evaluationError.hidden = false;
+    els.evaluationError.textContent = error.message;
+  } finally {
+    els.runEvaluation.disabled = false;
+  }
 }
 
 async function init() {

@@ -58,13 +58,47 @@ embeddings, and language models can be added without changing the API contract.
     evidence, so an answer is never fabricated.
 - **Human review workflow** (`POST /v1/documents/{id}/review`) to approve or
   correct low-confidence/missing fields, which updates document status.
+- **Optional local OCR for scanned PDFs** (`open_document_intelligence.ocr`):
+  when a PDF page has no extractable text but contains an embedded image, the
+  parser tries local OCR via [Tesseract](https://github.com/tesseract-ocr/tesseract)
+  through `pytesseract` (install the `ocr` extra). OCR is entirely optional and
+  local — there is **no silent fallback**: if the engine or its Python
+  bindings aren't installed, or the Tesseract binary can't be found, the page
+  is reported as `ocr_unavailable` with a specific reason instead of quietly
+  returning empty text. Every page is tagged with a `TextSource`
+  (`native_text`, `ocr`, `no_text`, `ocr_unavailable`, `ocr_failed`), and each
+  document exposes an aggregate `ocr_status` (`not_needed`, `used`,
+  `unavailable`, `failed`), `pages_ocr_used`/`pages_needing_ocr`, and an
+  `ocr_detail` message. A document that needs OCR but can't get it is routed
+  to human review rather than reported as clean. Set `ODI_TESSERACT_CMD` to
+  point at a non-standard Tesseract install; on Windows, common install
+  locations under `Program Files` are detected automatically.
+- **A persisted, append-only audit trail** (`open_document_intelligence.audit`,
+  `GET /v1/documents/{id}/audit`): every processing run and every field review
+  decision is recorded as an `AuditEvent` (event type, actor, detail,
+  timestamp) in its own JSON store (`apps/api/.data/audit.json`), independent
+  from the document records, and it survives process restarts.
+- **A local evaluation harness** (`open_document_intelligence.evaluation`,
+  `GET /v1/evaluation`, or `python -m open_document_intelligence.evaluation`
+  as a CLI) that scores extraction accuracy and retrieval hit-rate against a
+  small golden dataset built from the bundled samples — useful as a
+  regression check when extraction rules or retrieval logic change. The CLI
+  prints a JSON report and exits non-zero on any regression.
 - **A bundled sample dataset catalog** (`GET /v1/samples`,
   `POST /v1/samples/{id}/ingest`) of synthetic contract/invoice/policy/form
-  documents so the workbench is useful with zero setup.
+  documents, each declaring a `source` and `license` field (all bundled
+  samples are synthetic, CC0-licensed content authored for this project), so
+  the workbench is useful with zero setup. The catalog also includes a
+  synthetic, image-only scanned PDF (`sample-scanned-notice`) purpose-built to
+  demonstrate the OCR path end-to-end.
 - **A polished web UI** with upload + drag/drop, sample picker, a live pipeline
-  stepper, a document list/detail view, and confidence/evidence/review controls.
-- **CI** (`.github/workflows/ci.yml`) runs `ruff check` and `pytest` on every
-  push/PR.
+  stepper, a document list/detail view, confidence/evidence/review controls,
+  an OCR status indicator, an audit trail view, and a "run local evaluation"
+  panel.
+- **CI** (`.github/workflows/ci.yml`) installs the real `tesseract-ocr` engine
+  and runs `ruff check` and `pytest` (exercising the genuine OCR-success path,
+  not just mocks) on every push/PR, plus a separate `web-check` job that runs
+  `node --check` over the frontend source as a lightweight syntax gate.
 
 ## Repository layout
 
@@ -98,20 +132,34 @@ pytest
 ruff check .
 ```
 
+To exercise the local OCR path (optional), install the extra and a local
+Tesseract engine:
+
+```powershell
+pip install -e ".[dev,ocr]"
+# Windows: winget install --id tesseract-ocr.tesseract
+# Debian/Ubuntu: sudo apt-get install -y tesseract-ocr
+```
+
+Without the extra/engine installed, OCR-dependent tests and pages are
+reported as unavailable (with a clear reason) rather than silently skipped
+as successful.
+
 #### Configuration (environment variables)
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `ODI_DATA_DIR` | `apps/api/.data` | Where documents, raw files, and `vectors.db` are stored. |
+| `ODI_DATA_DIR` | `apps/api/.data` | Where documents, raw files, `vectors.db`, and `audit.json` are stored. |
 | `ODI_ALLOWED_ORIGINS` | `http://localhost:8080` | Comma-separated CORS allow-list. No wildcard, no credentials, by default. |
 | `ODI_EMBEDDING_BACKEND` | `hashing` | Set to `sentence-transformers` to use a semantic embedder if the `ml` extra is installed; falls back to hashing automatically otherwise. |
 | `ODI_ENABLE_OLLAMA` | `false` | Set to `true` to let the `/rag` endpoint call a local Ollama server for generation. |
 | `ODI_OLLAMA_URL` | `http://localhost:11434` | Base URL of the local Ollama server. |
 | `ODI_OLLAMA_MODEL` | `llama3.2` | Ollama model name to use for generation. |
 | `ODI_OLLAMA_TIMEOUT_SECONDS` | `5` | Request timeout before falling back to the extractive generator. |
+| `ODI_TESSERACT_CMD` | _(auto-detected)_ | Path to the Tesseract binary, for non-standard installs. |
 
-Ollama and `sentence-transformers` are both entirely optional and local-only —
-nothing in this project calls a paid or cloud API.
+Ollama, `sentence-transformers`, and Tesseract/`pytesseract` are all entirely
+optional and local-only — nothing in this project calls a paid or cloud API.
 
 ### Web
 
@@ -138,11 +186,16 @@ Then open `http://localhost:8080` with the API running.
 
 ## Status
 
-End-to-end local pipeline implemented: upload/validate, parse (text/PDF),
-deterministic extraction, evidence citations, chunk indexing into a local
-vector store, vector-similarity retrieval with lexical fallback, a RAG
-endpoint that separates evidence from generation (optional local Ollama, safe
-extractive fallback), an explicit synchronous workflow/job record, a human
-review loop, a sample dataset catalog, and a full web UI, all covered by CI.
-Future milestones: OCR for scanned PDFs, true background/async processing for
-large files, and richer audit history.
+End-to-end local pipeline implemented: upload/validate, parse (text/PDF, with
+optional local OCR for scanned/image-only PDFs and explicit
+text-extracted-vs-OCR-needed metadata), deterministic extraction, evidence
+citations, chunk indexing into a local vector store, vector-similarity
+retrieval with lexical fallback, a RAG endpoint that separates evidence from
+generation (optional local Ollama, safe extractive fallback), an explicit
+synchronous workflow/job record, a human review loop, a persisted audit
+trail, a local evaluation harness for extraction/retrieval regressions, a
+sample dataset catalog with license/source metadata, and a full web UI, all
+covered by CI (including a real local-OCR success path and a frontend
+syntax check).
+Future milestones: true background/async processing for large files, and
+richer evaluation datasets covering more document types.

@@ -6,12 +6,17 @@ from uuid import UUID, uuid4
 from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 
+from .audit import AuditStore
+from .evaluation import run_evaluation
 from .models import (
+    AuditEvent,
+    AuditEventType,
     DocumentChunk,
     DocumentDetail,
     DocumentSource,
     DocumentSummary,
     DocumentType,
+    EvaluationReport,
     FieldStatus,
     ProcessingJob,
     ProcessingStatus,
@@ -40,10 +45,22 @@ PENDING_FIELD_STATUSES = (FieldStatus.needs_review, FieldStatus.missing)
 def create_app(data_dir: Path | None = None, vector_store: VectorStore | None = None) -> FastAPI:
     resolved_data_dir = data_dir or DEFAULT_DATA_DIR
     store = DocumentStore(resolved_data_dir)
+    audit = AuditStore(resolved_data_dir)
     vectors = vector_store or VectorStore(resolved_data_dir / "vectors.db")
 
     def index_chunks(document_id: UUID, chunks: list[DocumentChunk]) -> None:
         vectors.index_chunks(document_id, chunks)
+
+    def _record_processed(document: DocumentDetail) -> None:
+        """Record an audit trail entry for a completed processing run."""
+        audit.record(
+            document.id,
+            AuditEventType.document_processed,
+            detail=(
+                f"Processed '{document.filename}' from {document.source.value}; "
+                f"result: {document.status.value}."
+            ),
+        )
 
     app = FastAPI(
         title="Open Document Intelligence",
@@ -107,6 +124,7 @@ def create_app(data_dir: Path | None = None, vector_store: VectorStore | None = 
         if document.status != ProcessingStatus.failed:
             store.save_raw_file(document.id, entry.filename, content)
         store.add(document)
+        _record_processed(document)
         return document
 
     @app.get("/v1/documents", response_model=list[DocumentSummary], tags=["documents"])
@@ -188,6 +206,7 @@ def create_app(data_dir: Path | None = None, vector_store: VectorStore | None = 
         if document.status != ProcessingStatus.failed:
             store.save_raw_file(document.id, filename, content)
         store.add(document)
+        _record_processed(document)
         return document
 
     @app.post(
@@ -231,7 +250,32 @@ def create_app(data_dir: Path | None = None, vector_store: VectorStore | None = 
                 )
 
         store.update(document)
+        audit.record(
+            document.id,
+            AuditEventType.field_reviewed,
+            actor="reviewer",
+            detail=(
+                f"Field '{review.field_key}' {review.decision.value}d"
+                + (f" to '{review.corrected_value}'" if review.corrected_value else "")
+                + "."
+            ),
+        )
         return document
+
+    @app.get(
+        "/v1/documents/{document_id}/audit",
+        response_model=list[AuditEvent],
+        tags=["documents"],
+    )
+    def get_audit_trail(document_id: str, store: StoreDep) -> list[AuditEvent]:
+        if store.get(document_id) is None:
+            raise HTTPException(status_code=404, detail="Document was not found.")
+        return audit.list_for_document(document_id)
+
+    @app.get("/v1/evaluation", response_model=EvaluationReport, tags=["evaluation"])
+    def get_evaluation() -> EvaluationReport:
+        """Run the local extraction/retrieval evaluation harness on demand."""
+        return run_evaluation()
 
     @app.post(
         "/v1/documents/demo", response_model=DocumentDetail, status_code=201, tags=["documents"]
@@ -251,6 +295,7 @@ def create_app(data_dir: Path | None = None, vector_store: VectorStore | None = 
         )
         store.save_raw_file(document.id, entry.filename, content)
         store.add(document)
+        _record_processed(document)
         return document
 
     return app

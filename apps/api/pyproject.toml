@@ -23,6 +23,10 @@ dev = [
 ml = [
   "sentence-transformers>=3.0,<4.0",
 ]
+ocr = [
+  "pytesseract>=0.3.10,<1.0",
+  "Pillow>=10.0,<13.0",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/open_document_intelligence"]
