@@ -57,9 +57,6 @@ const els = {
   runEvaluation: document.querySelector('#run-evaluation'),
   evaluationResult: document.querySelector('#evaluation-result'),
   evaluationError: document.querySelector('#evaluation-error'),
-  navToggle: document.querySelector('#nav-toggle'),
-  navDrawer: document.querySelector('#nav-drawer'),
-  navBackdrop: document.querySelector('#nav-backdrop'),
   navLinks: document.querySelectorAll('.nav-link'),
   resultBanner: document.querySelector('#result-banner'),
   resultBannerContent: document.querySelector('#result-banner-content'),
@@ -76,23 +73,10 @@ function setActiveView(view) {
   els.navLinks.forEach((link) => {
     link.classList.toggle('active', link.dataset.view === view);
   });
-  closeNav();
 }
 
 function navigateTo(view) {
   window.location.hash = `#${view}`;
-}
-
-function closeNav() {
-  els.navDrawer.classList.remove('open');
-  els.navBackdrop.hidden = true;
-  els.navToggle.setAttribute('aria-expanded', 'false');
-}
-
-function toggleNav() {
-  const isOpen = els.navDrawer.classList.toggle('open');
-  els.navBackdrop.hidden = !isOpen;
-  els.navToggle.setAttribute('aria-expanded', String(isOpen));
 }
 
 function renderResultBanner(document_) {
@@ -487,8 +471,6 @@ function wireEvents() {
   els.uploadForm.addEventListener('submit', submitUpload);
   els.questionForm.addEventListener('submit', askQuestion);
 
-  els.navToggle.addEventListener('click', toggleNav);
-  els.navBackdrop.addEventListener('click', closeNav);
   window.addEventListener('hashchange', () => {
     setActiveView(window.location.hash.replace('#', ''));
   });

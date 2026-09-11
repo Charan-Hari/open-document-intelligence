@@ -9,9 +9,6 @@
   <body>
     <header class="topbar">
       <div class="topbar-left">
-        <button id="nav-toggle" class="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
         <div>
           <p class="eyebrow">LOCAL-FIRST DOCUMENT WORKBENCH</p>
           <h1>Open Document Intelligence</h1>
@@ -19,13 +16,12 @@
       </div>
     </header>
 
-    <nav id="nav-drawer" class="nav-drawer">
-      <a href="#upload" class="nav-link" data-view="upload">Upload</a>
-      <a href="#result" class="nav-link" data-view="result">Result</a>
-      <a href="#documents" class="nav-link" data-view="documents">Documents</a>
-      <a href="#evaluation" class="nav-link" data-view="evaluation">Evaluation</a>
+    <nav id="nav-drawer" class="nav-tabs">
+      <a href="#upload" class="nav-link" data-view="upload"><span class="nav-step">1</span>Upload</a>
+      <a href="#result" class="nav-link" data-view="result"><span class="nav-step">2</span>Result</a>
+      <a href="#documents" class="nav-link" data-view="documents"><span class="nav-step">3</span>Documents</a>
+      <a href="#evaluation" class="nav-link" data-view="evaluation"><span class="nav-step">4</span>Evaluation</a>
     </nav>
-    <div id="nav-backdrop" class="nav-backdrop" hidden></div>
 
     <main class="shell">
       <section id="view-upload" class="view">
