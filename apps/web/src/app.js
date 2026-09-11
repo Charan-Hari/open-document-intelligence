@@ -39,6 +39,10 @@ const els = {
   fieldList: document.querySelector('#field-list'),
   evidenceList: document.querySelector('#evidence-list'),
   textPreview: document.querySelector('#text-preview'),
+  questionForm: document.querySelector('#question-form'),
+  questionInput: document.querySelector('#question-input'),
+  questionError: document.querySelector('#question-error'),
+  questionAnswer: document.querySelector('#question-answer'),
 };
 
 function escapeHtml(value) {
@@ -248,6 +252,38 @@ function renderDetail(document) {
   renderEvidence(document);
   els.textPreview.textContent = document.text_preview || '(no preview available)';
   renderStages(document.stages);
+  els.questionAnswer.hidden = true;
+  els.questionAnswer.innerHTML = '';
+}
+
+async function askQuestion(event) {
+  event.preventDefault();
+  if (!state.selectedId || !els.questionInput.value.trim()) return;
+  els.questionError.hidden = true;
+  els.questionAnswer.hidden = false;
+  els.questionAnswer.innerHTML = '<span class="muted">Searching document evidence…</span>';
+  try {
+    const result = await apiFetch(`/v1/documents/${state.selectedId}/question`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: els.questionInput.value.trim() }),
+    });
+    const citations = result.citations.length
+      ? `<ul class="answer-citations">${result.citations.map((citation) => `
+          <li><span>p.${citation.page} · lines ${citation.line_start}-${citation.line_end}</span>
+            ${escapeHtml(citation.text)}</li>`).join('')}</ul>`
+      : '<p class="muted">No supporting citations were found.</p>';
+    els.questionAnswer.innerHTML = `
+      <div class="answer-header">
+        <strong>${result.grounded ? 'Grounded answer' : 'Insufficient evidence'}</strong>
+        <span>${Math.round(result.confidence * 100)}% match confidence</span>
+      </div>
+      <p>${escapeHtml(result.answer)}</p>${citations}`;
+  } catch (error) {
+    els.questionAnswer.hidden = true;
+    els.questionError.hidden = false;
+    els.questionError.textContent = error.message;
+  }
 }
 
 async function selectDocument(id) {
@@ -329,6 +365,7 @@ async function submitReview(fieldKey, decision, correctedValue) {
 
 function wireEvents() {
   els.uploadForm.addEventListener('submit', submitUpload);
+  els.questionForm.addEventListener('submit', askQuestion);
 
   els.fileInput.addEventListener('change', () => {
     const file = els.fileInput.files[0];

@@ -13,11 +13,14 @@ from .models import (
     DocumentType,
     FieldStatus,
     ProcessingStatus,
+    QuestionRequest,
+    QuestionResponse,
     ReviewDecision,
     ReviewRequest,
     StageStatus,
 )
 from .pipeline import ValidationError, process_document, validate_upload
+from .retrieval import answer_question
 from .samples import SAMPLE_CATALOG, get_sample, read_sample_bytes
 from .storage import DocumentStore
 
@@ -36,11 +39,16 @@ def create_app(data_dir: Path | None = None) -> FastAPI:
         version="0.1.0",
         description="Local-first, evidence-backed document processing workbench.",
     )
+    allowed_origins = [
+        origin.strip()
+        for origin in os.environ.get("ODI_ALLOWED_ORIGINS", "http://localhost:8080").split(",")
+        if origin.strip()
+    ]
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=allowed_origins,
+        allow_methods=["GET", "POST"],
+        allow_headers=["Content-Type"],
     )
     app.state.store = store
 
@@ -91,6 +99,19 @@ def create_app(data_dir: Path | None = None) -> FastAPI:
         if document is None:
             raise HTTPException(status_code=404, detail="Document was not found.")
         return document
+
+    @app.post(
+        "/v1/documents/{document_id}/question",
+        response_model=QuestionResponse,
+        tags=["retrieval"],
+    )
+    def question_document(
+        document_id: str, request: QuestionRequest, store: StoreDep
+    ) -> QuestionResponse:
+        document = store.get(document_id)
+        if document is None:
+            raise HTTPException(status_code=404, detail="Document was not found.")
+        return answer_question(request.question, document.chunks)
 
     @app.post("/v1/documents", response_model=DocumentDetail, status_code=201, tags=["documents"])
     async def upload_document(
@@ -184,4 +205,3 @@ def create_app(data_dir: Path | None = None) -> FastAPI:
 
 
 app = create_app()
-

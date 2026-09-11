@@ -65,6 +65,14 @@ class Evidence(BaseModel):
     confidence: float = Field(ge=0, le=1)
 
 
+class DocumentChunk(BaseModel):
+    id: str
+    text: str
+    page: int
+    line_start: int
+    line_end: int
+
+
 class ExtractedField(BaseModel):
     key: str
     label: str
@@ -89,6 +97,7 @@ class DocumentDetail(DocumentSummary):
     stages: list[PipelineStage] = Field(default_factory=list)
     fields: list[ExtractedField] = Field(default_factory=list)
     evidence: list[Evidence] = Field(default_factory=list)
+    chunks: list[DocumentChunk] = Field(default_factory=list)
     text_preview: str | None = None
     page_count: int | None = None
     char_count: int | None = None
@@ -112,3 +121,23 @@ class ReviewRequest(BaseModel):
     field_key: str
     decision: ReviewDecision
     corrected_value: str | None = None
+
+
+class QuestionRequest(BaseModel):
+    question: str = Field(min_length=3, max_length=1000)
+
+
+class QuestionCitation(BaseModel):
+    chunk_id: str
+    page: int
+    line_start: int
+    line_end: int
+    text: str
+    score: float = Field(ge=0, le=1)
+
+
+class QuestionResponse(BaseModel):
+    answer: str
+    confidence: float = Field(ge=0, le=1)
+    citations: list[QuestionCitation] = Field(default_factory=list)
+    grounded: bool

@@ -134,6 +134,15 @@
 
               <h4>Source preview</h4>
               <pre id="text-preview" class="text-preview"></pre>
+
+              <h4>Ask this document</h4>
+              <form id="question-form" class="question-form">
+                <input id="question-input" type="text" maxlength="1000"
+                  placeholder="e.g. Who owns this policy?" />
+                <button class="secondary-button" type="submit">Find evidence</button>
+              </form>
+              <p id="question-error" class="form-error" hidden></p>
+              <div id="question-answer" class="question-answer" hidden></div>
             </div>
           </div>
         </div>

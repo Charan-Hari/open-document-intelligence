@@ -93,6 +93,15 @@ select, input[type="text"] { background: #17222e; border: 1px solid #2c4c5c; bor
 .confidence-label { color: #77899a; font-size: 11px; display: block; margin-top: 6px; }
 .field-actions { margin-top: 10px; }
 .correct-form { display: flex; gap: 8px; margin-top: 10px; }
+.question-form { display: flex; gap: 8px; }
+.question-form .secondary-button { white-space: nowrap; }
+.question-answer { background: #14232c; border: 1px solid #39766d; border-radius: 10px; color: #cfe2ee; margin-top: 12px; padding: 14px 16px; }
+.answer-header { align-items: center; color: #6ed6bd; display: flex; justify-content: space-between; font-size: 12px; text-transform: uppercase; }
+.answer-header span { color: #8799ab; font-size: 11px; }
+.question-answer p { font-size: 13px; line-height: 1.55; }
+.answer-citations { border-top: 1px solid #2c4c5c; list-style: none; margin: 12px 0 0; padding: 10px 0 0; }
+.answer-citations li { color: #aab7c7; font-size: 12px; line-height: 1.5; margin-top: 7px; }
+.answer-citations span { color: #6ed6bd; display: block; font-size: 11px; font-weight: 700; }
 
 .evidence-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .evidence-list li { align-items: center; background: #0e161f; border: 1px solid #203445; border-radius: 8px; display: grid; gap: 10px; grid-template-columns: 90px 1fr 50px; padding: 10px 12px; }

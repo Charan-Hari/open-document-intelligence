@@ -189,3 +189,32 @@ def test_documents_persist_across_app_restarts(tmp_path) -> None:
 
     assert response.status_code == 200
     assert response.json()["id"] == document_id
+
+
+def test_document_question_returns_grounded_citations(client) -> None:
+    ingest = client.post("/v1/samples/sample-policy/ingest")
+    document_id = ingest.json()["id"]
+
+    response = client.post(
+        f"/v1/documents/{document_id}/question",
+        json={"question": "Who owns this policy?"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["grounded"] is True
+    assert body["citations"]
+    assert "Information Governance Office" in body["answer"]
+
+
+def test_document_question_refuses_unsupported_evidence(client) -> None:
+    ingest = client.post("/v1/samples/sample-policy/ingest")
+    document_id = ingest.json()["id"]
+
+    response = client.post(
+        f"/v1/documents/{document_id}/question",
+        json={"question": "What is the office temperature?"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["grounded"] is False

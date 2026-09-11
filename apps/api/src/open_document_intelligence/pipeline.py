@@ -12,6 +12,7 @@ from uuid import UUID
 
 from .extraction import extract_fields, needs_review, overall_confidence
 from .models import (
+    DocumentChunk,
     DocumentDetail,
     DocumentSource,
     DocumentType,
@@ -20,7 +21,7 @@ from .models import (
     ProcessingStatus,
     StageStatus,
 )
-from .parsing import ParsingError, parse_document
+from .parsing import Page, ParsingError, parse_document
 
 MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 MB
 ALLOWED_EXTENSIONS = {".txt", ".md", ".csv", ".pdf"}
@@ -117,6 +118,7 @@ def process_document(
         )
     )
 
+    chunks = _build_chunks(parsed.pages)
     fields, evidence = extract_fields(parsed, document_type)
     found_count = sum(1 for field in fields if field.value is not None)
     flagged = needs_review(fields)
@@ -176,8 +178,33 @@ def process_document(
         stages=stages,
         fields=fields,
         evidence=evidence,
+        chunks=chunks,
         text_preview=parsed.preview(),
         page_count=parsed.page_count,
         char_count=parsed.char_count,
         error=None,
     )
+
+
+def _build_chunks(pages: list[Page]) -> list[DocumentChunk]:
+    chunks: list[DocumentChunk] = []
+    for page in pages:
+        non_empty = [
+            (number, line.strip())
+            for number, line in enumerate(page.lines, start=1)
+            if line.strip()
+        ]
+        for offset in range(0, len(non_empty), 4):
+            window = non_empty[offset : offset + 4]
+            if not window:
+                continue
+            chunks.append(
+                DocumentChunk(
+                    id=f"chunk-{len(chunks) + 1}",
+                    text=" ".join(line for _, line in window),
+                    page=page.number,
+                    line_start=window[0][0],
+                    line_end=window[-1][0],
+                )
+            )
+    return chunks
